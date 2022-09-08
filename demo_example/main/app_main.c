@@ -65,7 +65,7 @@ static void configure_led(void)
 	gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
 }
 
-int publish_device_shadow(bytebeam_client_handle_t client, bytebeam_client* bb_obj)
+int publish_device_shadow(bytebeam_client* bb_obj)
 {
 	static uint64_t sq_num = 0;
 	cJSON *demo_data_json_list = NULL;
@@ -131,7 +131,7 @@ int publish_device_shadow(bytebeam_client_handle_t client, bytebeam_client* bb_o
 	sprintf(status_update, "%s", string_json);
 	ESP_LOGI(TAG, "\nStatus to send:\n%s\n", status_update);
 
-	publish_to_stream(client, bb_obj->device_cfg,  "device_shadow", string_json);
+	publish_to_bytebeam_stream(bb_obj,"device_shadow",string_json);
 
 	cJSON_Delete(demo_data_json_list);
 	free(string_json);
@@ -142,14 +142,14 @@ static void app_start(bytebeam_client *bb_obj)
 {
 	while(1)
 	{
-		publish_device_shadow(bb_obj->client, bb_obj);		
-		if(blink_led_cmd == 1)
+		publish_device_shadow(bb_obj);		
+		if(toggle_led_cmd == 1)
 		{
 			/* Toggle the LED state */
 			s_led_state = !s_led_state;
 			ESP_LOGI(TAG, " LED_%s!", s_led_state == true ? "ON" : "OFF");
 			blink_led();	
-			blink_led_cmd=0;
+			toggle_led_cmd=0;
 		}		
 		if(ota_update_completed==1)
 		{
@@ -218,6 +218,8 @@ void app_main(void)
 	ESP_ERROR_CHECK(example_connect());
 	obtain_time();
 	configure_led();
+	initialize_action_handler_array(action_funcs);
+	create_action_handlers();
 	bytebeam_init(&bb_obj);
 	app_start(&bb_obj);
 }

@@ -13,7 +13,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_system.h"
-#include "user_actions.h"
+// #include "user_actions.h"
 
 const char* ota_states[1] =
 {
@@ -25,11 +25,22 @@ char* ota_action_id=" ";
 
 static const char *TAG_BYTEBEAM_ACTIONS = "BYTEBEAM_SDK_ACTIONS";
 
-struct action_functions_map action_funcs[] = { {"update_firmware", handle_ota},{"toggle_board_led",toggle_led},{NULL, NULL} };
+action_functions_map action_funcs[NUMBER_OF_ACTIONS];
+
+void initialize_action_handler_array(action_functions_map* action_handler_array)
+{
+	int loop_var=1;
+	action_handler_array[0].func=handle_ota;
+	action_handler_array[0].name="update_firmware";
+	for(loop_var=1;loop_var<NUMBER_OF_ACTIONS;loop_var++)
+	{
+		action_handler_array[loop_var].func=NULL;
+		action_handler_array[loop_var].name=NULL;
+	}
+}
 
 int parse_ota_json(char*payload_string, char* url_string_return)
-{
-    
+{    
 	const cJSON *url = NULL;
 	const cJSON *version = NULL;
 
@@ -55,7 +66,7 @@ int parse_ota_json(char*payload_string, char* url_string_return)
 }
 
 
-void publish_action_status(device_config device_cfg,char* action_id, int percentage, esp_mqtt_client_handle_t client, char* status, char* error_message)
+void publish_action_status(device_config device_cfg,char* action_id, int percentage, bytebeam_client_handle_t client, char* status, char* error_message)
 {
 	static uint64_t sq_num = 0;
 	cJSON *demo_data_json_list = NULL;
@@ -157,7 +168,8 @@ void publish_action_status(device_config device_cfg,char* action_id, int percent
 	free(string_json);
 }
 
-void perform_ota(device_config device_cfg, char* action_id, char* ota_url, esp_mqtt_client_handle_t client)
+
+void perform_ota(device_config device_cfg, char* action_id, char* ota_url, bytebeam_client_handle_t client)
 {
 	test_device_config=device_cfg;
 	ESP_LOGI(TAG_BYTEBEAM_ACTIONS, "Starting OTA.....");
@@ -190,4 +202,3 @@ int handle_ota(bytebeam_client *bb_obj, char *payload_string, char *action_id)
     perform_ota(bb_obj->device_cfg, action_id, constrcuted_url, bb_obj->client);
     return 0;
 }
-

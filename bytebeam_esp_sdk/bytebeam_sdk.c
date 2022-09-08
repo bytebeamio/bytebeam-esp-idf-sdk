@@ -8,7 +8,6 @@
 #include "driver/gpio.h"
 #include "bytebeam_sdk.h"
 #include "bytebeam_esp_hal.h"
-
 #include "bytebeam_actions.h"
 
 extern const uint8_t device_cert_json_start[] asm("_binary_device_1222_json_start");
@@ -16,7 +15,7 @@ extern const uint8_t device_cert_json_end[] asm("_binary_device_1222_json_end");
 
 static const char *TAG = "BYTEBEAM_SDK";
 
-int subscribe_to_actions(device_config device_cfg, esp_mqtt_client_handle_t client)
+int subscribe_to_actions(device_config device_cfg, bytebeam_client_handle_t client)
 {
 	int msg_id;
 	char topic[200]={0,};
@@ -26,23 +25,6 @@ int subscribe_to_actions(device_config device_cfg, esp_mqtt_client_handle_t clie
 	return msg_id;
 }
 
-int publish_to_stream(esp_mqtt_client_handle_t client, device_config device_cfg, char* stream_name, char* json_to_publish)
-{
-	int msg_id = 0;
-	char topic[200] = {0,};
-	sprintf(topic,"/tenants/%s/devices/%s/events/%s/jsonarray", device_cfg.project_id, device_cfg.device_id, stream_name);
-	ESP_LOGI(TAG, "Topic is %s", topic);
-	msg_id = esp_mqtt_client_publish(client, topic, (const char *)json_to_publish, strlen(json_to_publish), 1, 0);	
-	if(connection_status == 1)
-	{
-		ESP_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, json_to_publish);
-	}
-	else
-	{
-		ESP_LOGE(TAG,"Publish to device shadow Failed");
-	}
-	return 0;
-}
 
 int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t *mqtt_cfg)
 {
@@ -133,7 +115,7 @@ int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t
 }
 
 
-int handle_actions(char* action_received, esp_mqtt_client_handle_t client, bytebeam_client *bb_obj)
+int handle_actions(char* action_received, bytebeam_client_handle_t client, bytebeam_client *bb_obj)
 {
 	 cJSON *root = NULL;
 	 cJSON *name = NULL;
@@ -188,8 +170,33 @@ int handle_actions(char* action_received, esp_mqtt_client_handle_t client, byteb
 }
 
 
+void publish_positive_response_for_action(bytebeam_client *bb_obj,char *action_id)
+{
+	publish_action_status(bb_obj->device_cfg,action_id,100,bb_obj->client,"Completed","No Error");
+}
+
+
 void bytebeam_init(bytebeam_client *bb_obj)
 {
 	parse_device_config_file(&bb_obj->device_cfg, &bb_obj->mqtt_cfg);
 	bytebeam_hal_init(bb_obj);
+}
+
+
+int publish_to_bytebeam_stream(bytebeam_client* bb_obj,char* stream_name,char* payload)
+{
+	int msg_id = 0;
+	char topic[200] = {0,};
+	sprintf(topic,"/tenants/%s/devices/%s/events/%s/jsonarray", bb_obj->device_cfg.project_id,bb_obj->device_cfg.device_id, stream_name);
+	ESP_LOGI(TAG, "Topic is %s", topic);
+	msg_id = esp_mqtt_client_publish(bb_obj->client, topic, (const char *)payload, strlen(payload), 1, 0);	
+	if(connection_status == 1)
+	{
+		ESP_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id,payload);
+	}
+	else
+	{
+		ESP_LOGE(TAG,"Publish to %s stream Failed",stream_name);
+	}
+	return 0;			
 }

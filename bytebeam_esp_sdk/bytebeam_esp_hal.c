@@ -18,7 +18,7 @@ int ota_img_data_len;
 int update_progress_percent;
 int loop_var=0;
 int connection_status=0;
-esp_mqtt_client_handle_t test_mclient_handle;
+bytebeam_client_handle_t test_mclient_handle;
 int ota_update_completed=0;
 char ota_action_id_str[15];
 
@@ -113,7 +113,7 @@ esp_err_t _test_event_handler(esp_http_client_event_t *evt)
 }
 
 
-int bytebeam_hal_ota(void *input, char* ota_url,esp_mqtt_client_handle_t test_handle)
+int bytebeam_hal_ota(void *input, char* ota_url,bytebeam_client_handle_t test_handle)
 {
 	device_config* device_cfg = input;
 	test_mclient_handle=test_handle;
@@ -175,7 +175,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 {
 	ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
 	esp_mqtt_event_handle_t event = event_data;
-	esp_mqtt_client_handle_t client = event->client;
+	bytebeam_client_handle_t client = event->client;
 	bytebeam_client *bb_obj = handler_args;
 	int msg_id;
 
@@ -192,7 +192,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 			ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_DISCONNECTED");
 			connection_status=0;
 			break;
-
+            
 		case MQTT_EVENT_SUBSCRIBED:
 			ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
 			break;
