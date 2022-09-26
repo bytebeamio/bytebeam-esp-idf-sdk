@@ -1,10 +1,12 @@
 idf_component_register(SRCS "app_main.c" 
-                            "../../bytebeam_esp_sdk/bytebeam_actions.c"
-                            "../../bytebeam_esp_sdk/bytebeam_esp_hal.c"
-                            "../../bytebeam_esp_sdk/bytebeam_sdk.c" 
-                            "../../bytebeam_esp_sdk/user_actions.c" 
-                       INCLUDE_DIRS "../../bytebeam_esp_sdk"
-                      )
+                       PRIV_REQUIRES "bytebeam_esp_sdk"
+                                     "nvs_flash"
+                                     "app_update"
+                                     "mqtt"
+                                     "protocol_examples_common"
+                                     "esp_http_client"
+                                     "esp_https_ota"
+                                     "json")
 
 
 
