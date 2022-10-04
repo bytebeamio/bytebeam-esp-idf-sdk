@@ -7,7 +7,7 @@ int toggle_led_cmd=0;
 int toggle_led(bytebeam_client *bb_obj, char *args, char *action_id)
 {
     toggle_led_cmd=1;
-    publish_positive_response_for_action(bb_obj,action_id);
+    publish_action_completed(bb_obj,action_id);
     return 0;
 }
 

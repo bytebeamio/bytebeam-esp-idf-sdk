@@ -170,9 +170,21 @@ int handle_actions(char* action_received, bytebeam_client_handle_t client, byteb
 }
 
 
-void publish_positive_response_for_action(bytebeam_client *bb_obj,char *action_id)
+void publish_action_completed(bytebeam_client *bb_obj,char * action_id)
 {
 	publish_action_status(bb_obj->device_cfg,action_id,100,bb_obj->client,"Completed","No Error");
+}	
+
+
+void publish_action_failed(bytebeam_client *bb_obj,char * action_id)
+{
+	publish_action_status(bb_obj->device_cfg,action_id,0,bb_obj->client,"Failed","Action failed");
+}
+
+
+void publish_action_progress(bytebeam_client *bb_obj,char* action_id,int progress_percentage)
+{
+	publish_action_status(bb_obj->device_cfg,action_id,progress_percentage,bb_obj->client,"Progress","No Error");
 }
 
 

@@ -23,6 +23,8 @@ typedef struct bytebeam_client
 int subscribe_to_actions(device_config device_cfg, esp_mqtt_client_handle_t client);
 int handle_actions(char* action_received, esp_mqtt_client_handle_t client, bytebeam_client *bb_obj);
 void bytebeam_init(bytebeam_client *bb_obj);
-void publish_positive_response_for_action(bytebeam_client *bb_obj,char *action_id);
+void publish_action_completed(bytebeam_client *bb_obj,char * action_id);
+void publish_action_failed(bytebeam_client *bb_obj,char * action_id);
+void publish_action_progress(bytebeam_client *bb_obj,char* action_id,int progress_percentage);
 int publish_to_bytebeam_stream(bytebeam_client* bb_obj,char* stream_name,char* payload);
 
