@@ -41,7 +41,7 @@
 
 #include "bytebeam_sdk.h"
 // #include "bytebeam_esp_hal.h"
-#include "bytebeam_actions.h"
+// #include "bytebeam_actions.h"
 
 #define BLINK_GPIO 2
 
@@ -49,7 +49,11 @@ static uint8_t led_state = 0;
 static int config_blink_period = 1000;
 static int toggle_led_cmd = 0;
 
+bytebeam_client bb_obj;
+
 static const char *TAG = "BYTEBEAM_DEMO_EXAMPLE";
+
+// bytebeam_client bb_obj;
 
 static void blink_led(void)
 {
@@ -167,14 +171,6 @@ static void app_start(bytebeam_client *bb_obj)
 			toggle_led_cmd = 0;
 		}
 
-		if (ota_update_completed == 1)
-		{
-			vTaskDelay(config_blink_period / portTICK_PERIOD_MS);
-			bytebeam_publish_action_completed(bb_obj, ota_action_id_str);
-			// publish_action_status(bb_obj->device_cfg, ota_action_id_str, 100, bb_obj->client, "Completed", "Success");
-			ota_update_completed = 0;
-		}
-
 		vTaskDelay(config_blink_period / portTICK_PERIOD_MS);
 	}
 }
@@ -219,14 +215,15 @@ static void obtain_time(void)
 int toggle_led(bytebeam_client *bb_obj, char *args, char *action_id)
 {
 	toggle_led_cmd = 1;
-	bytebeam_publish_action_completed(bb_obj, action_id);
+	if ((bytebeam_publish_action_completed(bb_obj, action_id)) != 0)
+	{
+		ESP_LOGE(TAG, "Failed to Publish action response for Toggle LED action");
+	}
 	return 0;
 }
 
 void app_main(void)
 {
-	bytebeam_client bb_obj;
-
 	ESP_LOGI(TAG, "[APP] Startup..");
 	ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
 	ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
@@ -249,8 +246,9 @@ void app_main(void)
 
 	obtain_time();
 	configure_led();
-	bytebeam_init_action_handler_array(action_funcs);
-	bytebeam_create_new_action_handler(toggle_led, "toggle_board_led");
 	bytebeam_init(&bb_obj);
+	bytebeam_create_new_action_handler(&bb_obj, handle_ota, "update_firmware");
+	bytebeam_create_new_action_handler(&bb_obj, toggle_led, "toggle_board_led");
+	bytebeam_start(&bb_obj);
 	app_start(&bb_obj);
 }
