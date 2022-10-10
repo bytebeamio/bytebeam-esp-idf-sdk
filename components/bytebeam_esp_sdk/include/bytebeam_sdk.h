@@ -1,5 +1,5 @@
-#ifndef BYTEBEAM_SDK_H 
-#define BYTEBEAM_SDK_H 
+#ifndef BYTEBEAM_SDK_H
+#define BYTEBEAM_SDK_H
 
 #include "mqtt_client.h"
 
@@ -22,8 +22,8 @@ struct bytebeam_client_s;
 
 typedef struct
 {
-    const char *name;
-    int (*func)(struct bytebeam_client_s *bb_obj, char *args, char *action_id);
+	const char *name;
+	int (*func)(struct bytebeam_client_s *bb_obj, char *args, char *action_id);
 } action_functions_map;
 
 typedef struct bytebeam_client_s

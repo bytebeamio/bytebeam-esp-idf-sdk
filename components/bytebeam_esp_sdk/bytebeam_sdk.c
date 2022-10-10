@@ -10,6 +10,8 @@
 #include "bytebeam_esp_hal.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "esp_spiffs.h"
+#include "utils.h"
 
 char *ota_action_id = "";
 
@@ -32,13 +34,51 @@ int bytebeam_subscribe_to_actions(device_config device_cfg, bytebeam_client_hand
 
 int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t *mqtt_cfg)
 {
-	const char *json_file = (const char *)device_cert_json_start;
+	char *config_fname = "/spiffs/device_config.json";
+	esp_vfs_spiffs_conf_t conf = {
+		.base_path = "/spiffs",
+		.partition_label = NULL,
+		.max_files = 5,
+		.format_if_mount_failed = true};
+
+	esp_err_t ret = esp_vfs_spiffs_register(&conf);
+
+	if (ret != ESP_OK)
+	{
+		if (ret == ESP_FAIL)
+		{
+			ESP_LOGE(TAG, "Failed to mount or format filesystem");
+		}
+		else if (ret == ESP_ERR_NOT_FOUND)
+		{
+			ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+		}
+
+		return -1;
+	}
+
+	char *device_config_data = utils_read_file(config_fname);
+
+	if (device_config_data == NULL)
+	{
+		ESP_LOGE(TAG, "Error in reading Config data from FLASH");
+
+		esp_vfs_spiffs_unregister(conf.partition_label);
+		free(device_config_data);
+		return -1;
+	}
+
+	esp_vfs_spiffs_unregister(conf.partition_label);
+
+	const char *json_file = (const char *)device_config_data;
 
 	cJSON *cert_json = cJSON_Parse(json_file);
 
 	if (cert_json == NULL)
 	{
 		ESP_LOGE(TAG, "ERROR in parsing the JSON\n");
+
+		free(device_config_data);
 		return -1;
 	}
 
@@ -47,6 +87,8 @@ int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t
 	if (!(cJSON_IsString(prj_id_obj) && (prj_id_obj->valuestring != NULL)))
 	{
 		ESP_LOGE(TAG, "ERROR in getting the prject id\n");
+
+		free(device_config_data);
 		return -1;
 	}
 
@@ -57,6 +99,8 @@ int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t
 	if (!(cJSON_IsString(broker_name_obj) && (broker_name_obj->valuestring != NULL)))
 	{
 		ESP_LOGE(TAG, "ERROR parsing broker name");
+
+		free(device_config_data);
 		return -1;
 	}
 
@@ -65,6 +109,8 @@ int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t
 	if (!(cJSON_IsNumber(port_num_obj)))
 	{
 		ESP_LOGE(TAG, "ERROR parsing port number.");
+
+		free(device_config_data);
 		return -1;
 	}
 
@@ -79,6 +125,8 @@ int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t
 	if (!(cJSON_IsString(device_id_obj) && (device_id_obj->valuestring != NULL)))
 	{
 		ESP_LOGE(TAG, "ERROR parsing device id\n");
+
+		free(device_config_data);
 		return -1;
 	}
 
@@ -88,6 +136,8 @@ int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t
 	if (cert_json == NULL || !(cJSON_IsObject(auth_obj)))
 	{
 		ESP_LOGE(TAG, "ERROR in parsing the auth JSON\n");
+
+		free(device_config_data);
 		return -1;
 	}
 
@@ -96,6 +146,8 @@ int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t
 	if (!(cJSON_IsString(ca_cert_obj) && (ca_cert_obj->valuestring != NULL)))
 	{
 		ESP_LOGE(TAG, "ERROR parsing ca certificate\n");
+
+		free(device_config_data);
 		return -1;
 	}
 
@@ -107,6 +159,8 @@ int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t
 	if (!(cJSON_IsString(device_cert_obj) && (device_cert_obj->valuestring != NULL)))
 	{
 		ESP_LOGE(TAG, "ERROR parsing device certifate\n");
+
+		free(device_config_data);
 		return -1;
 	}
 
@@ -118,11 +172,15 @@ int parse_device_config_file(device_config *device_cfg, esp_mqtt_client_config_t
 	if (!(cJSON_IsString(device_private_key_obj) && (device_private_key_obj->valuestring != NULL)))
 	{
 		ESP_LOGE(TAG, "ERROR device private key\n");
+
+		free(device_config_data);
 		return -1;
 	}
 
 	device_cfg->client_key_pem = (char *)device_private_key_obj->valuestring;
 	mqtt_cfg->client_key_pem = (char *)device_cfg->client_key_pem;
+
+	free(device_config_data);
 	return 0;
 }
 

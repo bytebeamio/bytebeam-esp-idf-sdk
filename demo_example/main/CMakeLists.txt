@@ -7,6 +7,3 @@ idf_component_register(SRCS "app_main.c"
                                      "esp_http_client"
                                      "esp_https_ota"
                                      "json")
-
-
-
