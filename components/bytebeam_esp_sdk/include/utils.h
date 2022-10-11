@@ -12,8 +12,9 @@ extern char *utils_read_file(char *filename)
 
     file = fopen(filename, "r");
 
-    if (file == NULL)
+    if (file == NULL) {
         return NULL;
+    }
 
     fseek(file, 0, SEEK_END);
     int file_length = ftell(file);
@@ -25,8 +26,7 @@ extern char *utils_read_file(char *filename)
     int temp_c;
     int loop_var = 0;
 
-    while ((temp_c = fgetc(file)) != EOF)
-    {
+    while ((temp_c = fgetc(file)) != EOF) {
         buff[loop_var] = temp_c;
         loop_var++;
     }

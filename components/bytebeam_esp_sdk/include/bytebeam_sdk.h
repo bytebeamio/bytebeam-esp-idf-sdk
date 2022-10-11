@@ -5,14 +5,13 @@
 
 #define NUMBER_OF_ACTIONS 10
 
-typedef struct device_config
-{
-	char *ca_cert_pem;
-	char *client_cert_pem;
-	char *client_key_pem;
-	char broker_uri[100];
-	char device_id[10];
-	char project_id[100];
+typedef struct device_config {
+    char *ca_cert_pem;
+    char *client_cert_pem;
+    char *client_key_pem;
+    char broker_uri[100];
+    char device_id[10];
+    char project_id[100];
 } device_config;
 
 typedef esp_mqtt_client_handle_t bytebeam_client_handle_t;
@@ -20,19 +19,17 @@ typedef esp_mqtt_client_config_t bytebeam_client_config_t;
 
 struct bytebeam_client_s;
 
-typedef struct
-{
-	const char *name;
-	int (*func)(struct bytebeam_client_s *bb_obj, char *args, char *action_id);
+typedef struct {
+    const char *name;
+    int (*func)(struct bytebeam_client_s *bb_obj, char *args, char *action_id);
 } action_functions_map;
 
-typedef struct bytebeam_client_s
-{
-	device_config device_cfg;
-	bytebeam_client_handle_t client;
-	bytebeam_client_config_t mqtt_cfg;
-	action_functions_map action_funcs[NUMBER_OF_ACTIONS];
-	int connection_status;
+typedef struct bytebeam_client_s {
+    device_config device_cfg;
+    bytebeam_client_handle_t client;
+    bytebeam_client_config_t mqtt_cfg;
+    action_functions_map action_funcs[NUMBER_OF_ACTIONS];
+    int connection_status;
 } bytebeam_client;
 
 extern char *ota_action_id;
