@@ -40,8 +40,6 @@
 #include "driver/gpio.h"
 
 #include "bytebeam_sdk.h"
-// #include "bytebeam_esp_hal.h"
-// #include "bytebeam_actions.h"
 
 #define BLINK_GPIO 2
 
@@ -49,11 +47,9 @@ static uint8_t led_state = 0;
 static int config_blink_period = 1000;
 static int toggle_led_cmd = 0;
 
-bytebeam_client bb_obj;
+bytebeam_client_t bb_obj;
 
 static const char *TAG = "BYTEBEAM_DEMO_EXAMPLE";
-
-// bytebeam_client bb_obj;
 
 static void blink_led(void)
 {
@@ -67,18 +63,17 @@ static void configure_led(void)
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
 }
 
-static int publish_device_shadow(bytebeam_client *bb_obj)
+static int publish_device_shadow(bytebeam_client_t *bb_obj)
 {
-    static uint64_t sq_num = 0;
+    static uint64_t sequence = 0;
+
     cJSON *device_shadow_json_list = NULL;
     cJSON *device_shadow_json = NULL;
-    cJSON *seq_id_json = NULL;
+    cJSON *sequence_json = NULL;
     cJSON *timestamp_json = NULL;
     cJSON *device_status_json = NULL;
+
     char *string_json = NULL;
-    char status_update[800] = {
-        0,
-    };
 
     device_shadow_json_list = cJSON_CreateArray();
 
@@ -96,7 +91,6 @@ static int publish_device_shadow(bytebeam_client *bb_obj)
     }
 
     struct timeval te;
-    sq_num++;
     gettimeofday(&te, NULL); // get current time
     long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000;
     timestamp_json = cJSON_CreateNumber(milliseconds);
@@ -109,15 +103,16 @@ static int publish_device_shadow(bytebeam_client *bb_obj)
 
     cJSON_AddItemToObject(device_shadow_json, "timestamp", timestamp_json);
 
-    seq_id_json = cJSON_CreateNumber(sq_num);
+    sequence++;
+    sequence_json = cJSON_CreateNumber(sequence);
 
-    if (seq_id_json == NULL) {
+    if (sequence_json == NULL) {
         ESP_LOGE(TAG, "Json add sequence id failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
 
-    cJSON_AddItemToObject(device_shadow_json, "sequence", seq_id_json);
+    cJSON_AddItemToObject(device_shadow_json, "sequence", sequence_json);
 
     char temp_buff[200];
     sprintf(temp_buff, "LED is %s!", led_state == true ? "ON" : "OFF");
@@ -134,17 +129,17 @@ static int publish_device_shadow(bytebeam_client *bb_obj)
     cJSON_AddItemToArray(device_shadow_json_list, device_shadow_json);
 
     string_json = cJSON_Print(device_shadow_json_list);
-    sprintf(status_update, "%s", string_json);
-    ESP_LOGI(TAG, "\nStatus to send:\n%s\n", status_update);
+    ESP_LOGI(TAG, "\nStatus to send:\n%s\n", string_json);
 
     bytebeam_publish_to_stream(bb_obj, "device_shadow", string_json);
 
     cJSON_Delete(device_shadow_json_list);
     free(string_json);
+
     return 0;
 }
 
-static void app_start(bytebeam_client *bb_obj)
+static void app_start(bytebeam_client_t *bb_obj)
 {
     int ret_val = 0;
 
@@ -152,13 +147,14 @@ static void app_start(bytebeam_client *bb_obj)
         ret_val = publish_device_shadow(bb_obj);
 
         if (ret_val != 0) {
-            ESP_LOGE(TAG, "TERMINATING PUBLISH DUE TO FAILURE IN JSON CREATION");
+            ESP_LOGE(TAG, "Publish to device shadow failed");
         }
 
         if (toggle_led_cmd == 1) {
             /* Toggle the LED state */
             led_state = !led_state;
             ESP_LOGI(TAG, " LED_%s!", led_state == true ? "ON" : "OFF");
+
             blink_led();
             toggle_led_cmd = 0;
         }
@@ -179,21 +175,24 @@ static void initialize_sntp(void)
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "pool.ntp.org");
     sntp_set_time_sync_notification_cb(time_sync_notification_cb);
+
 #ifdef CONFIG_SNTP_TIME_SYNC_METHOD_SMOOTH
     sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
 #endif
+
     sntp_init();
 }
 
-static void obtain_time(void)
+static void sync_time_from_ntp(void)
 {
-    initialize_sntp();
-    // wait for time to be set
     time_t now = 0;
     struct tm timeinfo = {0};
     int retry = 0;
     const int retry_count = 10;
 
+    initialize_sntp();
+
+    // wait for time to be set
     while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
         ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -203,12 +202,15 @@ static void obtain_time(void)
     localtime_r(&now, &timeinfo);
 }
 
-int toggle_led(bytebeam_client *bb_obj, char *args, char *action_id)
+int toggle_led(bytebeam_client_t *bb_obj, char *args, char *action_id)
 {
     toggle_led_cmd = 1;
+
     if ((bytebeam_publish_action_completed(bb_obj, action_id)) != 0) {
         ESP_LOGE(TAG, "Failed to Publish action response for Toggle LED action");
+		return -1;
     }
+
     return 0;
 }
 
@@ -234,11 +236,13 @@ void app_main(void)
      */
     ESP_ERROR_CHECK(example_connect());
 
-    obtain_time();
+    sync_time_from_ntp();
     configure_led();
+
     bytebeam_init(&bb_obj);
-    bytebeam_create_new_action_handler(&bb_obj, handle_ota, "update_firmware");
-    bytebeam_create_new_action_handler(&bb_obj, toggle_led, "toggle_board_led");
+    bytebeam_add_action_handler(&bb_obj, handle_ota, "update_firmware");
+    bytebeam_add_action_handler(&bb_obj, toggle_led, "toggle_board_led");
     bytebeam_start(&bb_obj);
+
     app_start(&bb_obj);
 }

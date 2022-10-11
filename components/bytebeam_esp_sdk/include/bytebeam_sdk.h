@@ -3,48 +3,45 @@
 
 #include "mqtt_client.h"
 
-#define NUMBER_OF_ACTIONS 10
+#define BYTEBEAM_NUMBER_OF_ACTIONS 10
 
-typedef struct device_config {
+typedef struct bytebeam_device_config_t {
     char *ca_cert_pem;
     char *client_cert_pem;
     char *client_key_pem;
     char broker_uri[100];
     char device_id[10];
     char project_id[100];
-} device_config;
+} bytebeam_device_config_t;
 
 typedef esp_mqtt_client_handle_t bytebeam_client_handle_t;
 typedef esp_mqtt_client_config_t bytebeam_client_config_t;
 
-struct bytebeam_client_s;
+struct bytebeam_client;
 
 typedef struct {
     const char *name;
-    int (*func)(struct bytebeam_client_s *bb_obj, char *args, char *action_id);
-} action_functions_map;
+    int (*func)(struct bytebeam_client *bb_obj, char *args, char *action_id);
+} bytebeam_action_functions_map_t;
 
-typedef struct bytebeam_client_s {
-    device_config device_cfg;
+typedef struct bytebeam_client {
+    bytebeam_device_config_t device_cfg;
     bytebeam_client_handle_t client;
     bytebeam_client_config_t mqtt_cfg;
-    action_functions_map action_funcs[NUMBER_OF_ACTIONS];
+    bytebeam_action_functions_map_t action_funcs[BYTEBEAM_NUMBER_OF_ACTIONS];
     int connection_status;
-} bytebeam_client;
+} bytebeam_client_t;
 
-extern char *ota_action_id;
+int bytebeam_init(bytebeam_client_t *bb_obj);
 
-int bytebeam_subscribe_to_actions(device_config device_cfg, esp_mqtt_client_handle_t client);
-int bytebeam_handle_actions(char *action_received, esp_mqtt_client_handle_t client, bytebeam_client *bb_obj);
-int bytebeam_init(bytebeam_client *bb_obj);
-int bytebeam_publish_action_completed(bytebeam_client *bb_obj, char *action_id);
-int bytebeam_publish_action_failed(bytebeam_client *bb_obj, char *action_id);
-int bytebeam_publish_action_progress(bytebeam_client *bb_obj, char *action_id, int progress_percentage);
-int bytebeam_publish_to_stream(bytebeam_client *bb_obj, char *stream_name, char *payload);
-int bytebeam_start(bytebeam_client *bb_obj);
-int publish_action_status(device_config device_cfg, char *action_id, int percentage, bytebeam_client_handle_t client, char *status, char *error_message);
-int handle_ota(bytebeam_client *bb_obj, char *payload_string, char *action_id);
-int bytebeam_create_new_action_handler(bytebeam_client *bb_obj, int (*func_ptr)(bytebeam_client *, char *, char *), char *func_name);
-void bytebeam_init_action_handler_array(action_functions_map *action_handler_array);
+int bytebeam_publish_action_completed(bytebeam_client_t *bb_obj, char *action_id);
+int bytebeam_publish_action_failed(bytebeam_client_t *bb_obj, char *action_id);
+int bytebeam_publish_action_progress(bytebeam_client_t *bb_obj, char *action_id, int progress_percentage);
+
+int bytebeam_publish_to_stream(bytebeam_client_t *bb_obj, char *stream_name, char *payload);
+int bytebeam_start(bytebeam_client_t *bb_obj);
+int bytebeam_add_action_handler(bytebeam_client_t *bb_obj, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name);
+
+int handle_ota(bytebeam_client_t *bb_obj, char *payload_string, char *action_id);
 
 #endif

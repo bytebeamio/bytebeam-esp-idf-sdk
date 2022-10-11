@@ -5,6 +5,7 @@
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "bytebeam_sdk.h"
+#include "bytebeam_esp_hal.h"
 #include "math.h"
 #include "string.h"
 #include "nvs.h"
@@ -16,7 +17,7 @@ static int ota_update_completed = 0;
 static char ota_action_id_str[15];
 
 static bytebeam_client_handle_t mqtt_client_handle;
-static device_config temp_device_config;
+static bytebeam_device_config_t temp_device_config;
 
 static const char *TAG_BYTE_BEAM_ESP_HAL = "BYTEBEAM_SDK";
 
@@ -110,12 +111,13 @@ esp_err_t _test_event_handler(esp_http_client_event_t *evt)
     default:
         break;
     }
+	
     return ESP_OK;
 }
 
-int bytebeam_hal_ota(bytebeam_client *bb_obj, char *ota_url)
+int bytebeam_hal_ota(bytebeam_client_t *bb_obj, char *ota_url)
 {
-    device_config *device_cfg = &bb_obj->device_cfg;
+    bytebeam_device_config_t *device_cfg = &bb_obj->device_cfg;
     mqtt_client_handle = bb_obj->client;
     temp_device_config = bb_obj->device_cfg;
 
@@ -126,6 +128,7 @@ int bytebeam_hal_ota(bytebeam_client *bb_obj, char *ota_url)
         .client_key_pem = (char *)device_cfg->client_key_pem,
         .event_handler = _http_event_handler,
     };
+
     esp_http_client_config_t test_config = {
         .url = ota_url,
         .cert_pem = (char *)device_cfg->ca_cert_pem,
@@ -178,7 +181,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     esp_mqtt_event_handle_t event = event_data;
     bytebeam_client_handle_t client = event->client;
-    bytebeam_client *bb_obj = handler_args;
+    bytebeam_client_t *bb_obj = handler_args;
     int msg_id;
 
     switch ((esp_mqtt_event_id_t)event_id) {
@@ -238,7 +241,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-int bytebeam_hal_init(bytebeam_client *bb_obj)
+int bytebeam_hal_init(bytebeam_client_t *bb_obj)
 {
     int32_t update_flag;
     nvs_handle_t temp_nv_handle;
@@ -270,11 +273,15 @@ int bytebeam_hal_init(bytebeam_client *bb_obj)
         if (update_flag == 1) {
             int32_t ota_action_id_val;
             update_flag = 0;
+
             nvs_set_i32(temp_nv_handle, "update_flag", update_flag);
             nvs_commit(temp_nv_handle);
+
             ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Reboot after successful OTA update");
+
             nvs_get_i32(temp_nv_handle, "action_id_val", &ota_action_id_val);
             sprintf(ota_action_id_str, "%d", ota_action_id_val);
+
             ota_update_completed = 1;
         } else {
             ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Normal reboot");
@@ -289,7 +296,7 @@ int bytebeam_hal_init(bytebeam_client *bb_obj)
     return 0;
 }
 
-int bytebeam_hal_start_mqtt(bytebeam_client *bb_obj)
+int bytebeam_hal_start_mqtt(bytebeam_client_t *bb_obj)
 {
     esp_err_t err;
 
@@ -301,6 +308,7 @@ int bytebeam_hal_start_mqtt(bytebeam_client *bb_obj)
 
     if (ota_update_completed == 1) {
         ota_update_completed = 0;
+
         if ((bytebeam_publish_action_completed(bb_obj, ota_action_id_str)) != 0) {
             ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA complete status");
         }
