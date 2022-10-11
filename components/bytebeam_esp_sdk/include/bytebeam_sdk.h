@@ -21,7 +21,7 @@ struct bytebeam_client;
 
 typedef struct {
     const char *name;
-    int (*func)(struct bytebeam_client *bb_obj, char *args, char *action_id);
+    int (*func)(struct bytebeam_client *bytebeam_client, char *args, char *action_id);
 } bytebeam_action_functions_map_t;
 
 typedef struct bytebeam_client {
@@ -32,16 +32,16 @@ typedef struct bytebeam_client {
     int connection_status;
 } bytebeam_client_t;
 
-int bytebeam_init(bytebeam_client_t *bb_obj);
+int bytebeam_init(bytebeam_client_t *bytebeam_client);
 
-int bytebeam_publish_action_completed(bytebeam_client_t *bb_obj, char *action_id);
-int bytebeam_publish_action_failed(bytebeam_client_t *bb_obj, char *action_id);
-int bytebeam_publish_action_progress(bytebeam_client_t *bb_obj, char *action_id, int progress_percentage);
+int bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_client, char *action_id);
+int bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client, char *action_id);
+int bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage);
 
-int bytebeam_publish_to_stream(bytebeam_client_t *bb_obj, char *stream_name, char *payload);
-int bytebeam_start(bytebeam_client_t *bb_obj);
-int bytebeam_add_action_handler(bytebeam_client_t *bb_obj, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name);
+int bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload);
+int bytebeam_start(bytebeam_client_t *bytebeam_client);
+int bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name);
 
-int handle_ota(bytebeam_client_t *bb_obj, char *payload_string, char *action_id);
+int handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id);
 
 #endif

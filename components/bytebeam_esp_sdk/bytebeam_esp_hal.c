@@ -111,15 +111,15 @@ esp_err_t _test_event_handler(esp_http_client_event_t *evt)
     default:
         break;
     }
-	
+
     return ESP_OK;
 }
 
-int bytebeam_hal_ota(bytebeam_client_t *bb_obj, char *ota_url)
+int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
 {
-    bytebeam_device_config_t *device_cfg = &bb_obj->device_cfg;
-    mqtt_client_handle = bb_obj->client;
-    temp_device_config = bb_obj->device_cfg;
+    bytebeam_device_config_t *device_cfg = &bytebeam_client->device_cfg;
+    mqtt_client_handle = bytebeam_client->client;
+    temp_device_config = bytebeam_client->device_cfg;
 
     esp_http_client_config_t config = {
         .url = ota_url,
@@ -181,13 +181,13 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     esp_mqtt_event_handle_t event = event_data;
     bytebeam_client_handle_t client = event->client;
-    bytebeam_client_t *bb_obj = handler_args;
+    bytebeam_client_t *bytebeam_client = handler_args;
     int msg_id;
 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_CONNECTED");
-        msg_id = bytebeam_subscribe_to_actions(bb_obj->device_cfg, client);
+        msg_id = bytebeam_subscribe_to_actions(bytebeam_client->device_cfg, client);
 
         if (msg_id != -1) {
             ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT SUBSCRIBED!! Msg ID:%d", msg_id);
@@ -195,12 +195,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT SUBSCRIBE FAILED");
         }
 
-        bb_obj->connection_status = 1;
+        bytebeam_client->connection_status = 1;
         break;
 
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_DISCONNECTED");
-        bb_obj->connection_status = 0;
+        bytebeam_client->connection_status = 0;
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
@@ -220,7 +220,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
         ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "DATA=%.*s\r\n", event->data_len, event->data);
 
-        bytebeam_handle_actions(event->data, event->client, bb_obj);
+        bytebeam_handle_actions(event->data, event->client, bytebeam_client);
         break;
 
     case MQTT_EVENT_ERROR:
@@ -241,7 +241,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-int bytebeam_hal_init(bytebeam_client_t *bb_obj)
+int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
 {
     int32_t update_flag;
     nvs_handle_t temp_nv_handle;
@@ -249,22 +249,22 @@ int bytebeam_hal_init(bytebeam_client_t *bb_obj)
 
     ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
 
-    bb_obj->client = esp_mqtt_client_init(&bb_obj->mqtt_cfg);
+    bytebeam_client->client = esp_mqtt_client_init(&bytebeam_client->mqtt_cfg);
 
-    if (bb_obj->client == NULL) {
+    if (bytebeam_client->client == NULL) {
         ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "MQTT Client initialization failed");
         return -1;
     }
 
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
-    err = esp_mqtt_client_register_event(bb_obj->client, ESP_EVENT_ANY_ID, mqtt_event_handler, bb_obj);
+    err = esp_mqtt_client_register_event(bytebeam_client->client, ESP_EVENT_ANY_ID, mqtt_event_handler, bytebeam_client);
 
     if (err != ESP_OK) {
         ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to register MQTT event callback");
         return -1;
     }
 
-    bytebeam_init_action_handler_array(bb_obj->action_funcs);
+    bytebeam_init_action_handler_array(bytebeam_client->action_funcs);
 
     nvs_open("test_storage", NVS_READWRITE, &temp_nv_handle);
     err = nvs_get_i32(temp_nv_handle, "update_flag", &update_flag);
@@ -296,11 +296,11 @@ int bytebeam_hal_init(bytebeam_client_t *bb_obj)
     return 0;
 }
 
-int bytebeam_hal_start_mqtt(bytebeam_client_t *bb_obj)
+int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client)
 {
     esp_err_t err;
 
-    err = esp_mqtt_client_start(bb_obj->client);
+    err = esp_mqtt_client_start(bytebeam_client->client);
 
     if (err != ESP_OK) {
         return -1;
@@ -309,7 +309,7 @@ int bytebeam_hal_start_mqtt(bytebeam_client_t *bb_obj)
     if (ota_update_completed == 1) {
         ota_update_completed = 0;
 
-        if ((bytebeam_publish_action_completed(bb_obj, ota_action_id_str)) != 0) {
+        if ((bytebeam_publish_action_completed(bytebeam_client, ota_action_id_str)) != 0) {
             ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA complete status");
         }
     }

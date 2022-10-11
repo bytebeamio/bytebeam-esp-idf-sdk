@@ -47,7 +47,7 @@ static uint8_t led_state = 0;
 static int config_blink_period = 1000;
 static int toggle_led_cmd = 0;
 
-bytebeam_client_t bb_obj;
+bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_DEMO_EXAMPLE";
 
@@ -63,7 +63,7 @@ static void configure_led(void)
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
 }
 
-static int publish_device_shadow(bytebeam_client_t *bb_obj)
+static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 {
     static uint64_t sequence = 0;
 
@@ -131,7 +131,7 @@ static int publish_device_shadow(bytebeam_client_t *bb_obj)
     string_json = cJSON_Print(device_shadow_json_list);
     ESP_LOGI(TAG, "\nStatus to send:\n%s\n", string_json);
 
-    bytebeam_publish_to_stream(bb_obj, "device_shadow", string_json);
+    bytebeam_publish_to_stream(bytebeam_client, "device_shadow", string_json);
 
     cJSON_Delete(device_shadow_json_list);
     free(string_json);
@@ -139,12 +139,12 @@ static int publish_device_shadow(bytebeam_client_t *bb_obj)
     return 0;
 }
 
-static void app_start(bytebeam_client_t *bb_obj)
+static void app_start(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
 
     while (1) {
-        ret_val = publish_device_shadow(bb_obj);
+        ret_val = publish_device_shadow(bytebeam_client);
 
         if (ret_val != 0) {
             ESP_LOGE(TAG, "Publish to device shadow failed");
@@ -202,11 +202,11 @@ static void sync_time_from_ntp(void)
     localtime_r(&now, &timeinfo);
 }
 
-int toggle_led(bytebeam_client_t *bb_obj, char *args, char *action_id)
+int toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
 {
     toggle_led_cmd = 1;
 
-    if ((bytebeam_publish_action_completed(bb_obj, action_id)) != 0) {
+    if ((bytebeam_publish_action_completed(bytebeam_client, action_id)) != 0) {
         ESP_LOGE(TAG, "Failed to Publish action response for Toggle LED action");
 		return -1;
     }
@@ -239,10 +239,10 @@ void app_main(void)
     sync_time_from_ntp();
     configure_led();
 
-    bytebeam_init(&bb_obj);
-    bytebeam_add_action_handler(&bb_obj, handle_ota, "update_firmware");
-    bytebeam_add_action_handler(&bb_obj, toggle_led, "toggle_board_led");
-    bytebeam_start(&bb_obj);
+    bytebeam_init(&bytebeam_client);
+    bytebeam_add_action_handler(&bytebeam_client, handle_ota, "update_firmware");
+    bytebeam_add_action_handler(&bytebeam_client, toggle_led, "toggle_board_led");
+    bytebeam_start(&bytebeam_client);
 
-    app_start(&bb_obj);
+    app_start(&bytebeam_client);
 }
