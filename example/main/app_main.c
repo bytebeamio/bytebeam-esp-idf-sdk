@@ -115,7 +115,15 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
     cJSON_AddItemToObject(device_shadow_json, "sequence", sequence_json);
 
     char temp_buff[200];
-    sprintf(temp_buff, "LED is %s!", led_state == true ? "ON" : "OFF");
+    int max_len = 200;
+
+    int temp_var = snprintf(temp_buff, max_len, "LED is %s!", led_state == true ? "ON" : "OFF");
+
+    if(temp_var > max_len)
+    {
+        ESP_LOGE(TAG, "device status string size exceeded max length of buffer");
+    }
+
     device_status_json = cJSON_CreateString(temp_buff);
 
     if (device_status_json == NULL) {

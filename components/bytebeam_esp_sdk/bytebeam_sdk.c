@@ -23,7 +23,8 @@ extern char *utils_read_file(char *filename)
 
     file = fopen(filename, "r");
 
-    if (file == NULL) {
+    if (file == NULL) 
+    {
         return NULL;
     }
 
@@ -33,6 +34,11 @@ extern char *utils_read_file(char *filename)
 
     // dynamically allocate a char array to store the file contents
     char *buff = malloc(sizeof(char) * (file_length + 1));
+
+    if(buff == NULL)
+    {
+        return NULL;
+    }
 
     int temp_c;
     int loop_var = 0;
@@ -54,7 +60,16 @@ int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_
     int msg_id;
     char topic[200] = { 0 };
 
-    sprintf(topic, "/tenants/%s/devices/%s/actions", device_cfg.project_id, device_cfg.device_id);
+    int max_len = 200;
+
+    int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/actions", device_cfg.project_id, device_cfg.device_id);
+    
+    if(temp_var > max_len)
+    {
+        ESP_LOGE(TAG, "subscribe topic size exceeded buffer size");
+        return -1;
+    }
+
     msg_id = bytebeam_hal_mqtt_subscribe(client, topic, 1);
 
     return msg_id;
@@ -73,10 +88,14 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, esp_mqtt_clie
 
     esp_err_t ret = esp_vfs_spiffs_register(&conf);
 
-    if (ret != ESP_OK) {
-        if (ret == ESP_FAIL) {
+    if (ret != ESP_OK) 
+    {
+
+        if (ret == ESP_FAIL) 
+        {
             ESP_LOGE(TAG, "Failed to mount or format filesystem");
-        } else if (ret == ESP_ERR_NOT_FOUND) {
+        } 
+        else if (ret == ESP_ERR_NOT_FOUND) {
             ESP_LOGE(TAG, "Failed to find SPIFFS partition");
         }
 
@@ -86,7 +105,7 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, esp_mqtt_clie
     char *device_config_data = utils_read_file(config_fname);
 
     if (device_config_data == NULL) {
-        ESP_LOGE(TAG, "Error in reading Config data from FLASH");
+        ESP_LOGE(TAG, "Error in fetching Config data from FLASH");
 
         esp_vfs_spiffs_unregister(conf.partition_label);
         free(device_config_data);
@@ -136,7 +155,16 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, esp_mqtt_clie
     }
 
     int port_int = port_num_obj->valuedouble;
-    sprintf(device_cfg->broker_uri, "mqtts://%s:%d", broker_name_obj->valuestring, port_int);
+    int max_len = 100;
+
+    int temp_var = snprintf(device_cfg->broker_uri, max_len, "mqtts://%s:%d", broker_name_obj->valuestring, port_int);
+
+    if(temp_var > max_len)
+    {
+        ESP_LOGE(TAG, "Broker URL length exceeded buffer size");
+        return -1;
+    }
+
     mqtt_cfg->uri = device_cfg->broker_uri;
 
     ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
@@ -340,10 +368,18 @@ int bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_
     int msg_id = 0;
     char topic[200] = {0};
 
-    sprintf(topic, "/tenants/%s/devices/%s/events/%s/jsonarray",
+    int max_len = 200;
+ 
+    int temp_var = snprintf(topic, max_len,  "/tenants/%s/devices/%s/events/%s/jsonarray",
             bytebeam_client->device_cfg.project_id,
             bytebeam_client->device_cfg.device_id,
             stream_name);
+
+    if(temp_var > max_len)
+    {
+        ESP_LOGE(TAG, "Publish topic size exceeded buffer size");
+        return -1;
+    }
 
     ESP_LOGI(TAG, "Topic is %s", topic);
 
@@ -382,7 +418,16 @@ int parse_ota_json(char *payload_string, char *url_string_return)
         return -1;
     }
 
-    sprintf(url_string_return, "%s", url->valuestring);
+    int max_len = 200;
+
+    int temp_var = snprintf(url_string_return, max_len, "%s", url->valuestring);
+
+    if(temp_var > max_len)
+    {
+        ESP_LOGE(TAG, "FW update URL exceeded buffer size");
+        return -1;
+    }
+
     ESP_LOGI(TAG, "The constructed URL is: %s", url_string_return);
 
     return 0;
@@ -495,7 +540,16 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
 
     char topic[300] = {0};
 
-    sprintf(topic, "/tenants/%s/devices/%s/action/status", device_cfg.project_id, device_cfg.device_id);
+    int max_len = 300;
+    
+    int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/action/status", device_cfg.project_id, device_cfg.device_id);
+
+    if(temp_var > max_len)
+    {
+        ESP_LOGE(TAG, "action status topic size exceeded topic buffer size");
+        return -1;
+    }
+
     ESP_LOGI(TAG, "\n%s\n", topic);
 
     int msg_id = bytebeam_hal_mqtt_publish(client, topic, string_json, strlen(string_json), 1);

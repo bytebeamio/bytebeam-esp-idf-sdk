@@ -8,4 +8,5 @@ set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_exam
                          ../components)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(mqtt_ssl_mutual_auth)
+project(bytebeam_example_app)
+
