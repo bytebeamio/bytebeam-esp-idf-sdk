@@ -10,7 +10,7 @@ This SDK consist of components that can be used for connecting ESP devices to [B
 
 - **components/bytebeam_esp_sdk** :-  This section contains source code for various functions that can be used by applications for interacting with Bytebeam platform. 
 - **example** :- This folder conatins demo application which demonstrates establishing secure connection with Bytebeam platform. Also, it demonstrates periodic data pushing and receiving actions.
--**provisioning** :- This folder contains application for pushing device config data to SPIFFS of device.
+- **provisioning** :- This folder contains application for pushing device config data to SPIFFS of device.
 
 ## Dependencies :-
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) 
