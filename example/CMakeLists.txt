@@ -9,5 +9,3 @@ set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_exam
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(mqtt_ssl_mutual_auth)
-
-target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/device_1.json" TEXT)

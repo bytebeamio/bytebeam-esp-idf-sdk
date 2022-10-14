@@ -11,5 +11,5 @@ static const char *TAG = "BYTEBEAM_PROVISIONING_EXAMPLE";
 
 void app_main()
 {
-	ESP_LOGI(TAG, "Device Provisioning is completed");
+    ESP_LOGI(TAG, "Device Provisioning is completed");
 }
