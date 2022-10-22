@@ -75,7 +75,7 @@ int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_
     return msg_id;
 }
 
-int parse_device_config_file(bytebeam_device_config_t *device_cfg, esp_mqtt_client_config_t *mqtt_cfg)
+int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_client_config_t *mqtt_cfg)
 {
     char *config_fname = "/spiffs/device_config.json";
 
@@ -297,69 +297,69 @@ cleanup:
     return 0;
 }
 
-int bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_client, char *action_id)
+bytebeam_err_t bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_client, char *action_id)
 {
     int ret_val = 0;
 
     ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, 100, bytebeam_client->client, "Completed", "No Error");
 
     if (ret_val != 0) {
-        return -1;
+        return BB_FAILURE;
     } else {
-        return 0;
+        return BB_SUCCESS;
     }
 }
 
-int bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client, char *action_id)
+bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client, char *action_id)
 {
     int ret_val = 0;
 
     ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, 0, bytebeam_client->client, "Failed", "Action failed");
 
     if (ret_val != 0) {
-        return -1;
+        return BB_FAILURE;
     } else {
-        return 0;
+        return BB_SUCCESS;
     }
 }
 
-int bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage)
+bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage)
 {
     int ret_val = 0;
 
     ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, progress_percentage, bytebeam_client->client, "Progress", "No Error");
 
     if (ret_val != 0) {
-        return -1;
+        return BB_FAILURE;
     } else {
-        return 0;
+        return BB_SUCCESS;
     }
 }
 
-int bytebeam_init(bytebeam_client_t *bytebeam_client)
+bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
     ret_val = parse_device_config_file(&bytebeam_client->device_cfg, &bytebeam_client->mqtt_cfg);
 
     if (ret_val != 0) {
         ESP_LOGE(TAG, "MQTT init failed due to error in parsing device config JSON");
-        return -1;
+        return BB_FAILURE;
     }
 
     if ((bytebeam_hal_init(bytebeam_client)) != 0) {
-        return -1;
+        return BB_FAILURE;
     }
 
-    return 0;
+    return BB_SUCCESS;
 }
 
-int bytebeam_start(bytebeam_client_t *bytebeam_client)
+bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
 {
     if ((bytebeam_hal_start_mqtt(bytebeam_client) != 0)) {
         ESP_LOGE(TAG, "MQTT Client start failed");
-        return -1;
+        return BB_FAILURE;
     } else {
-        return 0;
+        return BB_SUCCESS;
     }
 }
 
@@ -383,7 +383,7 @@ int bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_
 
     ESP_LOGI(TAG, "Topic is %s", topic);
 
-    msg_id = esp_mqtt_client_publish(bytebeam_client->client, topic, (const char *)payload, strlen(payload), 1, 0);
+    msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, (const char *)payload, strlen(payload), 1);
 
     if (bytebeam_client->connection_status == 1) {
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, payload);
@@ -600,31 +600,31 @@ int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char *ota_u
     return 0;
 }
 
-int handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id)
+bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id)
 {
     char constructed_url[200] = { 0 };
 
     if ((parse_ota_json(payload_string, constructed_url)) == -1) {
         ESP_LOGE(TAG, "Firmware upgrade failed due to error in parsing OTA JSON");
-        return -1;
+        return BB_FAILURE;
     }
 
     ota_action_id = action_id;
 
     if ((perform_ota(bytebeam_client, action_id, constructed_url)) == -1) {
-        return -1;
+        return BB_FAILURE;
     }
 
-    return 0;
+    return BB_SUCCESS;
 }
 
-int bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name)
+bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name)
 {
     static int function_handler_index = 0;
 
     if (function_handler_index >= BYTEBEAM_NUMBER_OF_ACTIONS) {
         ESP_LOGE(TAG, "Creation of new action handler failed");
-        return -1;
+        return BB_FAILURE;
     }
 
     bytebeam_client->action_funcs[function_handler_index].func = func_ptr;
@@ -632,7 +632,7 @@ int bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, int (*func_p
 
     function_handler_index = function_handler_index + 1;
 
-    return 0;
+    return BB_SUCCESS;
 }
 
 void bytebeam_init_action_handler_array(bytebeam_action_functions_map_t *action_handler_array)
