@@ -264,7 +264,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
         return -1;
     }
 
-    bytebeam_init_action_handler_array(bytebeam_client->action_funcs);
+    bytebeam_reset_action_handler_array(bytebeam_client);
 
     nvs_open("test_storage", NVS_READWRITE, &temp_nv_handle);
     err = nvs_get_i32(temp_nv_handle, "update_flag", &update_flag);
