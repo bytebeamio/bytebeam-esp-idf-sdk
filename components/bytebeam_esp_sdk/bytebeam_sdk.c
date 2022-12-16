@@ -12,6 +12,7 @@
 #include "nvs_flash.h"
 #include "esp_spiffs.h"
 
+#include "esp_sntp.h"
 
 char *ota_action_id = "";
 static int function_handler_index = 0;
@@ -165,9 +166,9 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
         return -1;
     }
 
-    mqtt_cfg->uri = device_cfg->broker_uri;
+    mqtt_cfg->broker.address.uri = device_cfg->broker_uri;
 
-    ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
+    ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->broker.address.uri);
 
     cJSON *device_id_obj = cJSON_GetObjectItem(cert_json, "device_id");
 
@@ -198,7 +199,7 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     }
 
     device_cfg->ca_cert_pem = (char *)ca_cert_obj->valuestring;
-    mqtt_cfg->cert_pem = device_cfg->ca_cert_pem;
+    mqtt_cfg->broker.verification.certificate = device_cfg->ca_cert_pem;
 
     cJSON *device_cert_obj = cJSON_GetObjectItem(auth_obj, "device_certificate");
 
@@ -210,7 +211,7 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     }
 
     device_cfg->client_cert_pem = (char *)device_cert_obj->valuestring;
-    mqtt_cfg->client_cert_pem = device_cfg->client_cert_pem;
+    mqtt_cfg->credentials.authentication.certificate = device_cfg->client_cert_pem;
 
     cJSON *device_private_key_obj = cJSON_GetObjectItem(auth_obj, "device_private_key");
 
@@ -222,7 +223,7 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     }
 
     device_cfg->client_key_pem = (char *)device_private_key_obj->valuestring;
-    mqtt_cfg->client_key_pem = (char *)device_cfg->client_key_pem;
+    mqtt_cfg->credentials.authentication.key = (char *)device_cfg->client_key_pem;
 
     free(device_config_data);
 

@@ -1,5 +1,7 @@
 idf_component_register(SRCS "app_main.c" 
                        PRIV_REQUIRES "bytebeam_esp_sdk"
+									 "esp_wifi"	
+									 "driver"
                                      "nvs_flash"
                                      "app_update"
                                      "mqtt"

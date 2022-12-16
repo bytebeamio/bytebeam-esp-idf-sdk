@@ -94,6 +94,10 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     case HTTP_EVENT_DISCONNECTED:
         ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_DISCONNECTED");
         break;
+	
+	case HTTP_EVENT_REDIRECT:
+	    ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_REDIRECT");
+        break;
     }
 
     return ESP_OK;
@@ -137,6 +141,9 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
         .event_handler = _test_event_handler,
     };
 
+	esp_https_ota_config_t ota_config = {
+        .http_config = &config,
+    };
     ota_img_data_len = 0;
 
     esp_http_client_handle_t client = esp_http_client_init(&test_config);
@@ -151,7 +158,7 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
     esp_http_client_cleanup(client);
     ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "The URL is:%s", config.url);
 
-    if ((esp_https_ota(&config)) != ESP_OK) {
+    if ((esp_https_ota(&ota_config)) != ESP_OK) {
         return -1;
     }
 
@@ -177,7 +184,7 @@ static void log_error_if_nonzero(const char *message, int error_code)
  */
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-    ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
+    ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "Event dispatched from event loop base=%s, event_id=%d", base, (int)event_id);
 
     esp_mqtt_event_handle_t event = event_data;
     bytebeam_client_handle_t client = event->client;
@@ -247,7 +254,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
     nvs_handle_t temp_nv_handle;
     esp_err_t err;
 
-    ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
+    ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "[APP] Free memory: %d bytes", (int)esp_get_free_heap_size());
 
     bytebeam_client->client = esp_mqtt_client_init(&bytebeam_client->mqtt_cfg);
 
@@ -280,7 +287,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
             ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Reboot after successful OTA update");
 
             nvs_get_i32(temp_nv_handle, "action_id_val", &ota_action_id_val);
-            sprintf(ota_action_id_str, "%d", ota_action_id_val);
+            sprintf(ota_action_id_str, "%d", (int)ota_action_id_val);
 
             ota_update_completed = 1;
         } else {
