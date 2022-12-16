@@ -157,6 +157,52 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client);
 bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name);
 
 /**
+ * @brief Remove action handler from the array
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ * @param[in] func_name       action name 
+ * 
+ * @return
+ *      BB_SUCCESS : Action handler removed successfully
+ *      BB_FAILURE : Failure in removing action handler 
+ */
+
+bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client, char *func_name);
+
+/**
+ * @brief Update action handler for handling particular action.
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ * @param[in] new_func_ptr    pointer to action handler function
+ * @param[in] func_name       action name 
+ * 
+ * @return
+ *      BB_SUCCESS : Action handler updated successfully
+ *      BB_FAILURE : Failure in updating action handler 
+ */
+bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client, int (*new_func_ptr)(bytebeam_client_t *, char *, char *), char *func_name);
+
+/**
+ * @brief print action handler array.
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ * 
+ * @return
+ *      void
+ */
+void bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client);
+
+/**
+ * @brief reset action handler array.
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ * 
+ * @return
+ *      void
+ */
+void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client);
+
+/**
  * @brief Download and update Firmware image 
  *
  * @param[in] bytebeam_client bytebeam client handle

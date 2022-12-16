@@ -43,6 +43,8 @@
 
 #define BLINK_GPIO 2
 
+#define DEBUG_BYTEBEAM_ESP 0
+
 static uint8_t led_state = 0;
 static int config_blink_period = 1000;
 static int toggle_led_cmd = 0;
@@ -50,6 +52,70 @@ static int toggle_led_cmd = 0;
 bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_DEMO_EXAMPLE";
+
+#if DEBUG_BYTEBEAM_ESP
+    int hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id) 
+    {
+        ESP_LOGE(TAG, "Hello World !");
+        return 0;
+    }
+
+    void action_handling_positive_test() 
+    {
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_1");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_2");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_3");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_4");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_5");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_6");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_7");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_8");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_9");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_10");
+        bytebeam_print_action_handler_array(&bytebeam_client);
+
+        bytebeam_remove_action_handler(&bytebeam_client, "hello_2");
+        bytebeam_print_action_handler_array(&bytebeam_client);
+
+        bytebeam_update_action_handler(&bytebeam_client, hello_world, "hello_4");
+        bytebeam_print_action_handler_array(&bytebeam_client);
+
+        bytebeam_reset_action_handler_array(&bytebeam_client);
+        bytebeam_print_action_handler_array(&bytebeam_client);
+
+        ESP_LOGI(TAG, "Action Handling Positive Test Executed Successfully !\n");
+    }
+
+    void action_handling_negative_test() 
+    {
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_1");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_1");
+        bytebeam_print_action_handler_array(&bytebeam_client);
+
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_2");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_3");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_4");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_5");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_6");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_7");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_8");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_9");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_10");
+        bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_11");
+        bytebeam_print_action_handler_array(&bytebeam_client);
+
+        bytebeam_remove_action_handler(&bytebeam_client, "hello_22");
+        bytebeam_print_action_handler_array(&bytebeam_client);
+
+        bytebeam_update_action_handler(&bytebeam_client, hello_world, "hello_44");
+        bytebeam_print_action_handler_array(&bytebeam_client);
+
+        bytebeam_reset_action_handler_array(&bytebeam_client);
+        bytebeam_print_action_handler_array(&bytebeam_client);
+
+        ESP_LOGI(TAG, "Action Handling Negative Test Executed Successfully !\n");
+    }
+#endif
 
 static void blink_led(void)
 {
@@ -248,6 +314,12 @@ void app_main(void)
     configure_led();
 
     bytebeam_init(&bytebeam_client);
+
+#if DEBUG_BYTEBEAM_ESP
+    action_handling_positive_test();
+    action_handling_negative_test();
+#endif
+
     bytebeam_add_action_handler(&bytebeam_client, handle_ota, "update_firmware");
     bytebeam_add_action_handler(&bytebeam_client, toggle_led, "toggle_board_led");
     bytebeam_start(&bytebeam_client);
