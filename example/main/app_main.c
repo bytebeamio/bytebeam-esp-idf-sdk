@@ -5,6 +5,7 @@
    or push a command to it or stream data from it and visualise it on the Bytebeam Cloud.
 */
 
+#include <math.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -38,16 +39,29 @@
 #include "cJSON.h"
 
 #include "driver/gpio.h"
+#include "driver/ledc.h"
 
 #include "bytebeam_sdk.h"
 
+#define DEBUG_BYTEBEAM_ESP 0
+
 #define BLINK_GPIO 2
 
-#define DEBUG_BYTEBEAM_ESP 0
+#define LEDC_TIMER              LEDC_TIMER_0
+#define LEDC_MODE               LEDC_LOW_SPEED_MODE
+#define LEDC_OUTPUT_IO          (13) // Define the output GPIO
+#define LEDC_CHANNEL            LEDC_CHANNEL_0
+#define LEDC_DUTY_RES           LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
+#define LEDC_FREQUENCY          (5000) // Frequency in Hertz. Set frequency at 5 kHz
+#define LEDC_STEP_SIZE          255
 
 static uint8_t led_state = 0;
 static int config_blink_period = 1000;
 static int toggle_led_cmd = 0;
+
+static uint32_t led_duty_cycle = 0;
+static int update_config_cmd = 0;
+static char *update_config_str = NULL;
 
 bytebeam_client_t bytebeam_client;
 
@@ -127,6 +141,37 @@ static void configure_led(void)
 {
     gpio_reset_pin(BLINK_GPIO);
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+}
+
+static void update_led(void) 
+{
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, led_duty_cycle);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+}
+
+static void ledc_init(void)
+{
+    // Prepare and then apply the LEDC PWM timer configuration
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode       = LEDC_MODE,
+        .timer_num        = LEDC_TIMER,
+        .duty_resolution  = LEDC_DUTY_RES,
+        .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 5 kHz
+        .clk_cfg          = LEDC_AUTO_CLK
+    };
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+
+    // Prepare and then apply the LEDC PWM channel configuration
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_MODE,
+        .channel        = LEDC_CHANNEL,
+        .timer_sel      = LEDC_TIMER_0,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = LEDC_OUTPUT_IO,
+        .duty           = 0, // Set duty to 0%
+        .hpoint         = 0
+    };
+    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
 }
 
 static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
@@ -223,6 +268,49 @@ static void app_start(bytebeam_client_t *bytebeam_client)
         if (ret_val != 0) {
             ESP_LOGE(TAG, "Publish to device shadow failed");
         }
+        
+        if(update_config_cmd) {
+            /* Parse the received json */
+            cJSON *root = NULL;
+            cJSON *name = NULL;
+            cJSON *version = NULL;
+            cJSON *step_value = NULL;
+
+            root = cJSON_Parse(update_config_str);
+
+            name = cJSON_GetObjectItem(root, "name");
+
+            if (!(cJSON_IsString(name) && (name->valuestring != NULL))) {
+                ESP_LOGE(TAG, "Error parsing update config name\n");
+            }
+
+            ESP_LOGI(TAG, "Checking update config name \"%s\"\n", name->valuestring);
+
+            version = cJSON_GetObjectItem(root, "version");
+
+            if (!(cJSON_IsString(version) && (version->valuestring != NULL))) {
+                ESP_LOGE(TAG, "Error parsing update config version\n");
+            }
+
+            ESP_LOGI(TAG, "Checking update config version \"%s\"\n", version->valuestring);
+
+            step_value = cJSON_GetObjectItem(root, "step_value");
+
+            if (!(cJSON_IsNumber(step_value))) {
+                ESP_LOGE(TAG, "Error parsing update config step value\n");
+            }
+
+            ESP_LOGI(TAG, "Checking update config step value %d\n", (int)step_value->valuedouble);
+            
+            /* Generate the duty cycle */
+            uint32_t ledc_res = (uint32_t)round(pow(2,LEDC_DUTY_RES));
+            led_duty_cycle = ((ledc_res - 1) * (step_value->valuedouble/LEDC_STEP_SIZE));
+            ESP_LOGI(TAG, " LED Duty Cycle Value is %d!", (int)led_duty_cycle);
+
+            update_led();
+            update_config_str = NULL;
+            update_config_cmd = 0;
+        }
 
         if (toggle_led_cmd == 1) {
             /* Toggle the LED state */
@@ -276,6 +364,19 @@ static void sync_time_from_ntp(void)
     localtime_r(&now, &timeinfo);
 }
 
+int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *action_id) 
+{
+    update_config_cmd = 1;
+    update_config_str = args;
+
+    if ((bytebeam_publish_action_completed(bytebeam_client, action_id)) != 0) {
+        ESP_LOGE(TAG, "Failed to Publish action response for Update Config action");
+		return -1;
+    }
+
+    return 0;
+}
+
 int toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
 {
     toggle_led_cmd = 1;
@@ -312,6 +413,7 @@ void app_main(void)
 
     sync_time_from_ntp();
     configure_led();
+    ledc_init();
 
     bytebeam_init(&bytebeam_client);
 
@@ -321,6 +423,7 @@ void app_main(void)
 #endif
 
     bytebeam_add_action_handler(&bytebeam_client, handle_ota, "update_firmware");
+    bytebeam_add_action_handler(&bytebeam_client, handle_update_config, "update_config");
     bytebeam_add_action_handler(&bytebeam_client, toggle_led, "toggle_board_led");
     bytebeam_start(&bytebeam_client);
 
