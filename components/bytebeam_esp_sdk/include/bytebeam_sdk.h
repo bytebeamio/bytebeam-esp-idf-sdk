@@ -8,8 +8,41 @@
 
 #include "mqtt_client.h"
 
+/*This macro is used to debug the sdk, we will keep all the unnecessary print under this macro*/
+#define DEBUG_BYTEBEAM_SDK false
+
 /*This macro is used to specify the maximum number of actions that need to be handled for particular device*/
 #define BYTEBEAM_NUMBER_OF_ACTIONS 10
+
+/*This macro is used to specify the maximum log level that need to be handled for particular device*/
+#define BYTEBEAM_LOG_LEVEL BYTEBEAM_LOG_LEVEL_INFO
+
+#define BYTEBEAM_LOGX(ESP_LOGX, level, levelStr, tag, fmt, ...)                               \
+     do {                                                                                     \
+        if((level != BYTEBEAM_LOG_LEVEL_NONE) && (level <= bytebeam_log_level_get())) {       \
+            if (bytebeam_log_publish(levelStr, tag, fmt, ##__VA_ARGS__) == BB_FAILURE) {      \
+            ESP_LOGE(tag, "Failed To Publish Bytebeam Log !");                                \
+            } else {                                                                          \
+            ESP_LOGX(tag, fmt, ##__VA_ARGS__);                                                \
+            }                                                                                 \
+        }                                                                                     \
+    } while (0)
+
+#define BYTEBEAM_LOGE(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGE, BYTEBEAM_LOG_LEVEL_ERROR, "ERROR", tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGW(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGW, BYTEBEAM_LOG_LEVEL_WARN, "WARN", tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGI(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGI, BYTEBEAM_LOG_LEVEL_INFO, "INFO", tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGD(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGD, BYTEBEAM_LOG_LEVEL_DEBUG, "DEBUG", tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGV(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGV, BYTEBEAM_LOG_LEVEL_VERBOSE, "VERBOSE", tag, fmt, ##__VA_ARGS__)
+
+
+typedef enum {
+    BYTEBEAM_LOG_LEVEL_NONE,
+    BYTEBEAM_LOG_LEVEL_ERROR,
+    BYTEBEAM_LOG_LEVEL_WARN,
+    BYTEBEAM_LOG_LEVEL_INFO,
+    BYTEBEAM_LOG_LEVEL_DEBUG,
+    BYTEBEAM_LOG_LEVEL_VERBOSE,
+} bytebeam_log_level_t;
 
 /**
  * @struct bytebeam_device_config_t
@@ -130,7 +163,18 @@ bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client
  */
 bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage);
 
-int bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload);
+/**
+ * @brief Publish message to particualar stream
+ *
+ * @param[in] bytebeam_client     bytebeam client handle
+ * @param[in] stream_name         name of the target stream
+ * @param[in] payload             message to publish
+ * 
+ * @return
+ *      BB_SUCCESS : Message publish successful
+ *      BB_FAILURE : Message publish failed
+ */
+bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload);
 
 /**
  * @brief Starts bytebeam MQTT client after client is initialised.
@@ -215,4 +259,51 @@ void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client);
  */
 bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id);
 
-#endif
+/**
+ * @brief Set the bytebeam log client handle
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ * 
+ * @return
+ *      void
+ */
+void bytebeam_log_set_client(bytebeam_client_t *bytebeam_client);
+
+/**
+ * @brief Set the bytebeam log level
+ *
+ * @param[in] bytebeam_log_level_t log level
+ * 
+ * @return
+ *      void
+ */
+void bytebeam_log_level_set(bytebeam_log_level_t level);
+
+/**
+ * @brief Get the bytebeam log level
+ *
+ * @param
+ *      void
+ * 
+ * @return
+ *      bytebeam_log_level_t log level
+ */
+bytebeam_log_level_t bytebeam_log_level_get(void);
+
+/**
+ * @brief Publish Log to Bytebeam
+ *
+ * @note  This api works on bytebeam log client handle so make sure to set the bytebeam log handle
+ *        before calling this api, If called without setting it will return BB_BB_FAILURE
+ * 
+ * @param[in] level     indicates log level
+ * @param[in] tag       indicates log level
+ * @param[in] fmt       variable arguments
+ * 
+ * @return
+ *      BB_SUCCESS : Log publish successful
+ *      BB_FAILURE : Log publish failed
+ */
+bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const char *fmt, ...);
+
+#endif /* BYTEBEAM_SDK_H */

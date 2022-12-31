@@ -28,7 +28,7 @@ int bytebeam_hal_mqtt_subscribe(void *client, char *topic, int qos)
 
 int bytebeam_hal_mqtt_publish(void *client, char *topic, const char *message, int length, int qos)
 {
-    return esp_mqtt_client_publish(client, topic, (const char *)message, length, 1, 1);
+    return esp_mqtt_client_publish(client, topic, (const char *)message, length, qos, 1);
 }
 
 int bytebeam_hal_restart(void)
@@ -271,6 +271,8 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
         return -1;
     }
 
+    bytebeam_log_set_client(bytebeam_client);
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL);
     bytebeam_reset_action_handler_array(bytebeam_client);
 
     nvs_open("test_storage", NVS_READWRITE, &temp_nv_handle);

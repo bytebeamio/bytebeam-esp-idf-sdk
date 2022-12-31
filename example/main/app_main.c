@@ -43,7 +43,9 @@
 
 #include "bytebeam_sdk.h"
 
-#define DEBUG_BYTEBEAM_ESP 0
+#define DEBUG_APP_MAIN 1
+#define ACTION_HANDLING_TEST 0
+#define BYTEBEAM_LOG_TEST 1
 
 #define BLINK_GPIO 2
 
@@ -67,10 +69,10 @@ bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_DEMO_EXAMPLE";
 
-#if DEBUG_BYTEBEAM_ESP
+#if (DEBUG_APP_MAIN && ACTION_HANDLING_TEST)
     int hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id) 
     {
-        ESP_LOGE(TAG, "Hello World !");
+        ESP_LOGI(TAG, "Hello World !");
         return 0;
     }
 
@@ -128,6 +130,31 @@ static const char *TAG = "BYTEBEAM_DEMO_EXAMPLE";
         bytebeam_print_action_handler_array(&bytebeam_client);
 
         ESP_LOGI(TAG, "Action Handling Negative Test Executed Successfully !\n");
+    }
+#endif
+
+#if (DEBUG_APP_MAIN && BYTEBEAM_LOG_TEST)
+    void bytebeam_log_test() 
+    {
+        BYTEBEAM_LOGE(TAG, "I am %s Log", "Error");
+        BYTEBEAM_LOGW(TAG, "I am %s Log", "Warn");
+        BYTEBEAM_LOGI(TAG, "I am %s Log", "Info");
+
+        /* default bytebeam log level is BYTEBEAM_LOG_LEVEL_INFO, so these logs will not appear */
+        BYTEBEAM_LOGD(TAG, "I am %s Log", "Debug");
+        BYTEBEAM_LOGV(TAG, "I am %s Log", "Verbose");
+
+        /* changing bytebeam log level to BYTEBEAM_LOG_LEVEL_VERBOSE to show the use case */
+        bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_VERBOSE);
+
+        /* now these logs should appear */
+        BYTEBEAM_LOGD(TAG, "This is %s Log", "Debug");
+        BYTEBEAM_LOGV(TAG, "This is %s Log", "Verbose");
+
+        /* changing bytebeam log level back to BYTEBEAM_LOG_LEVEL_INFO for meeting initail conditions */
+        bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_INFO);
+
+        ESP_LOGI(TAG, "Bytebeam Log Test Executed Successfully !\n");
     }
 #endif
 
@@ -417,7 +444,10 @@ void app_main(void)
 
     bytebeam_init(&bytebeam_client);
 
-#if DEBUG_BYTEBEAM_ESP
+    /* Action Handling can be tested once bytebeam client is initialized and before adding any
+     * action, enable ACTION_HANDLING_TEST in addition to debug macro to test action handing feature
+     */
+#if (DEBUG_APP_MAIN && ACTION_HANDLING_TEST)
     action_handling_positive_test();
     action_handling_negative_test();
 #endif
@@ -426,6 +456,13 @@ void app_main(void)
     bytebeam_add_action_handler(&bytebeam_client, handle_update_config, "update_config");
     bytebeam_add_action_handler(&bytebeam_client, toggle_led, "toggle_board_led");
     bytebeam_start(&bytebeam_client);
+
+    /* Logs can be tested once bytebeam client is started, enable BYTEBEAM_LOG_TEST
+     * in addition to debug macro to test bytebeam log feature
+     */
+#if (DEBUG_APP_MAIN && BYTEBEAM_LOG_TEST)
+    bytebeam_log_test();
+#endif
 
     app_start(&bytebeam_client);
 }

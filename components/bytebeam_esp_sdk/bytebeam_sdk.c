@@ -16,6 +16,10 @@
 
 char *ota_action_id = "";
 static int function_handler_index = 0;
+
+static bytebeam_client_t *bytebeam_log_client = NULL;
+static bytebeam_log_level_t bytebeam_log_level = BYTEBEAM_LOG_LEVEL_NONE;
+
 static const char *TAG = "BYTEBEAM_SDK";
 
 extern char *utils_read_file(char *filename)
@@ -364,8 +368,9 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
     }
 }
 
-int bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload)
+bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload)
 {
+    int qos = 1;
     int msg_id = 0;
     char topic[200] = {0};
 
@@ -379,20 +384,20 @@ int bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_
     if(temp_var > max_len)
     {
         ESP_LOGE(TAG, "Publish topic size exceeded buffer size");
-        return -1;
+        return BB_FAILURE;
     }
 
     ESP_LOGI(TAG, "Topic is %s", topic);
 
-    msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, (const char *)payload, strlen(payload), 1);
+    msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, (const char *)payload, strlen(payload), qos);
 
     if (bytebeam_client->connection_status == 1) {
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, payload);
+        return BB_SUCCESS;
     } else {
         ESP_LOGE(TAG, "Publish to %s stream Failed", stream_name);
+        return BB_FAILURE;
     }
-
-    return msg_id;
 }
 
 int parse_ota_json(char *payload_string, char *url_string_return)
@@ -716,4 +721,159 @@ void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client)
     }
 
     function_handler_index = 0;
+}
+
+void bytebeam_log_set_client(bytebeam_client_t *bytebeam_client)
+{
+    bytebeam_log_client = bytebeam_client;
+}
+
+void bytebeam_log_level_set(bytebeam_log_level_t level)
+{
+    bytebeam_log_level = level;
+}
+
+bytebeam_log_level_t bytebeam_log_level_get(void)
+{
+    return bytebeam_log_level;
+}
+
+bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const char *fmt, ...)
+{
+    static uint64_t sequence = 0;
+
+    cJSON *device_log_json_list = NULL;
+    cJSON *device_log_json = NULL;
+    cJSON *sequence_json = NULL;
+    cJSON *timestamp_json = NULL;
+    cJSON *log_level_json = NULL;
+    cJSON *log_tag_json = NULL;
+    cJSON *log_message_json = NULL;
+
+    char *log_string_json = NULL;
+
+    if(bytebeam_log_client == NULL)
+    {
+        ESP_LOGE(TAG, "Bytebeam log client handle is not set");
+        return BB_FAILURE;
+    }
+
+    va_list args;
+
+    // get the buffer size (+1 for NULL Character)
+    va_start(args, fmt);
+    int buffer_size = vsnprintf(NULL, 0, fmt, args) + 1; 
+    va_end(args);
+
+    // Check the buffer size
+    if(buffer_size <= 0) 
+    {
+        ESP_LOGE(TAG, "Failed to Get the buffer size for Bytebeam Log.");
+        return BB_FAILURE;
+    }
+
+    // allocate the memory for the buffer to store the message
+    char *message_buffer = (char*) malloc(buffer_size);
+    if (message_buffer == NULL) 
+    {
+        ESP_LOGE(TAG, "Failed to ALlocate the memory for Bytebeam Log.");
+        return BB_FAILURE;
+    }
+
+    // get the message in the buffer
+    va_start(args, fmt);
+    int temp_var = vsnprintf(message_buffer, buffer_size, fmt, args);
+    va_end(args);
+
+    // Check for argument loss
+    if (temp_var >= buffer_size) 
+    {
+        ESP_LOGE(TAG, "Failed to Get the message for Bytebeam Log.");
+        return BB_FAILURE;
+    }
+
+    device_log_json_list = cJSON_CreateArray();
+
+    if (device_log_json_list == NULL) {
+        ESP_LOGE(TAG, "Log Json Init failed.");
+        return BB_FAILURE;
+    }
+
+    device_log_json = cJSON_CreateObject();
+
+    if (device_log_json == NULL) {
+        ESP_LOGE(TAG, "Log Json add failed.");
+        cJSON_Delete(device_log_json_list);
+        return BB_FAILURE;
+    }
+    
+    struct timeval te;
+    gettimeofday(&te, NULL); // get current time
+    long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000;
+    timestamp_json = cJSON_CreateNumber(milliseconds);
+
+    if (timestamp_json == NULL) {
+        ESP_LOGE(TAG, "Log Json add time stamp failed.");
+        cJSON_Delete(device_log_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(device_log_json, "timestamp", timestamp_json);
+
+    sequence++;
+    sequence_json = cJSON_CreateNumber(sequence);
+
+    if (sequence_json == NULL) {
+        ESP_LOGE(TAG, "Log Json add sequence id failed.");
+        cJSON_Delete(device_log_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(device_log_json, "sequence", sequence_json);
+
+    log_level_json = cJSON_CreateString(level);
+
+    if (log_level_json == NULL) {
+        ESP_LOGE(TAG, "Log Json add level failed.");
+        cJSON_Delete(device_log_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(device_log_json, "level", log_level_json);
+
+    log_tag_json = cJSON_CreateString(tag);
+
+    if (log_tag_json == NULL) {
+        ESP_LOGE(TAG, "Log Json add tag failed.");
+        cJSON_Delete(device_log_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(device_log_json, "tag", log_tag_json);
+
+    log_message_json = cJSON_CreateString(message_buffer);
+
+    if (log_message_json == NULL) {
+        ESP_LOGE(TAG, "Log Json add message failed.");
+        cJSON_Delete(device_log_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(device_log_json, "message", log_message_json);
+
+    cJSON_AddItemToArray(device_log_json_list, device_log_json);
+
+    log_string_json = cJSON_Print(device_log_json_list);
+
+#if DEBUG_BYTEBEAM_SDK
+    ESP_LOGI(TAG, "\n Log to Send :\n%s\n", log_string_json);
+#endif
+
+    int ret_val = bytebeam_publish_to_stream(bytebeam_log_client, "Logs", log_string_json);
+
+    cJSON_Delete(device_log_json_list);
+    free(log_string_json);
+    free(message_buffer);
+
+    return ret_val;
 }
