@@ -60,26 +60,6 @@ char *utils_read_file(char *filename)
     return buff;
 }
 
-int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client)
-{
-    int msg_id;
-    int qos = 1;
-    char topic[200] = { 0 };
-
-    int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
-    int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/actions", device_cfg.project_id, device_cfg.device_id);
-    
-    if(temp_var >= max_len)
-    {
-        ESP_LOGE(TAG, "subscribe topic size exceeded buffer size");
-        return -1;
-    }
-
-    msg_id = bytebeam_hal_mqtt_subscribe(client, topic, qos);
-
-    return msg_id;
-}
-
 int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_client_config_t *mqtt_cfg)
 {
     char *config_fname = "/spiffs/device_config.json";
@@ -269,6 +249,59 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     free(device_config_data);
 
     return 0;
+}
+
+int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client)
+{
+    int msg_id;
+    int qos = 1;
+    char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = { 0 };
+
+    int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
+    int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/actions", device_cfg.project_id, device_cfg.device_id);
+
+    if(temp_var >= max_len)
+    {
+        ESP_LOGE(TAG, "subscribe topic size exceeded buffer size");
+        return -1;
+    }
+
+#if DEBUG_BYTEBEAM_SDK
+    ESP_LOGI(TAG, "Subscribe Topic is %s", topic);
+#endif
+
+    msg_id = bytebeam_hal_mqtt_subscribe(client, topic, qos);
+
+    return msg_id;
+}
+
+int bytebeam_unsubscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client)
+{
+    int msg_id;
+    char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = { 0 };
+
+    int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
+    int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/actions", device_cfg.project_id, device_cfg.device_id);
+
+    if(temp_var >= max_len)
+    {
+        ESP_LOGE(TAG, "unsubscribe topic size exceeded buffer size");
+        return -1;
+    }
+
+#if DEBUG_BYTEBEAM_SDK
+    ESP_LOGI(TAG, "Unsubscribe Topic is %s", topic);
+#endif
+
+    /* Commenting call to hal unsubscribe api as cloud seems to be not supporting unsubscribe feature, will test it
+     * once cloud supports unsubscribe feature, most probably it will work.
+     */
+
+    // msg_id = bytebeam_hal_mqtt_unsubscribe(client, topic);
+    msg_id = 1234;
+    ESP_LOGI(TAG, "We will add the unsubscribe to actions feature soon");
+
+    return msg_id;
 }
 
 int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t client, bytebeam_client_t *bytebeam_client)

@@ -29,6 +29,11 @@ int bytebeam_hal_mqtt_subscribe(bytebeam_client_handle_t client, char *topic, in
     return esp_mqtt_client_subscribe(client, (const char *)topic, qos);
 }
 
+int bytebeam_hal_mqtt_unsubscribe(bytebeam_client_handle_t client, char *topic)
+{
+    return esp_mqtt_client_unsubscribe(client, (const char *)topic);
+}
+
 int bytebeam_hal_mqtt_publish(bytebeam_client_handle_t client, char *topic, char *message, int length, int qos)
 {
     return esp_mqtt_client_publish(client, (const char *)topic, (const char *)message, length, qos, 1);
