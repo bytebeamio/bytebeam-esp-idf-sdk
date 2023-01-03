@@ -12,23 +12,26 @@
 #include "nvs_flash.h"
 #include "esp_system.h"
 
+/*This macro is used to specify the maximum length of OTA action id string including NULL Character*/
+#define OTA_ACTION_ID_STR_LEN 20
+
 static int ota_img_data_len = 0;
 static int ota_update_completed = 0;
-static char ota_action_id_str[15];
+static char ota_action_id_str[OTA_ACTION_ID_STR_LEN];
 
 static bytebeam_client_handle_t mqtt_client_handle;
 static bytebeam_device_config_t temp_device_config;
 
 static const char *TAG_BYTE_BEAM_ESP_HAL = "BYTEBEAM_SDK";
 
-int bytebeam_hal_mqtt_subscribe(void *client, char *topic, int qos)
+int bytebeam_hal_mqtt_subscribe(bytebeam_client_handle_t client, char *topic, int qos)
 {
-    return esp_mqtt_client_subscribe(client, topic, qos);
+    return esp_mqtt_client_subscribe(client, (const char *)topic, qos);
 }
 
-int bytebeam_hal_mqtt_publish(void *client, char *topic, const char *message, int length, int qos)
+int bytebeam_hal_mqtt_publish(bytebeam_client_handle_t client, char *topic, char *message, int length, int qos)
 {
-    return esp_mqtt_client_publish(client, topic, (const char *)message, length, qos, 1);
+    return esp_mqtt_client_publish(client, (const char *)topic, (const char *)message, length, qos, 1);
 }
 
 int bytebeam_hal_restart(void)
@@ -121,7 +124,7 @@ esp_err_t _test_event_handler(esp_http_client_event_t *evt)
 
 int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
 {
-    bytebeam_device_config_t *device_cfg = &bytebeam_client->device_cfg;
+    bytebeam_device_config_t *device_cfg = &(bytebeam_client->device_cfg);
     mqtt_client_handle = bytebeam_client->client;
     temp_device_config = bytebeam_client->device_cfg;
 
@@ -189,7 +192,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     esp_mqtt_event_handle_t event = event_data;
     bytebeam_client_handle_t client = event->client;
     bytebeam_client_t *bytebeam_client = handler_args;
-    int msg_id;
+    int msg_id, ret_val;
 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
@@ -199,7 +202,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         if (msg_id != -1) {
             ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT SUBSCRIBED!! Msg ID:%d", msg_id);
         } else {
-            ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT SUBSCRIBE FAILED");
+            ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "MQTT SUBSCRIBE FAILED");
         }
 
         bytebeam_client->connection_status = 1;
@@ -227,7 +230,14 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
         ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "DATA=%.*s\r\n", event->data_len, event->data);
 
-        bytebeam_handle_actions(event->data, event->client, bytebeam_client);
+        ret_val = bytebeam_handle_actions(event->data, event->client, bytebeam_client);
+
+        if (ret_val != 0) {
+            ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "BYTEBEAM HANDLE ACTIONS FAILED");
+        } else {
+            ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "BYTEBEAM HANDLE ACTIONS SUCCESS!!");
+        }
+
         break;
 
     case MQTT_EVENT_ERROR:
@@ -275,23 +285,59 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
     bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL);
     bytebeam_reset_action_handler_array(bytebeam_client);
 
-    nvs_open("test_storage", NVS_READWRITE, &temp_nv_handle);
+    err = nvs_open("test_storage", NVS_READWRITE, &temp_nv_handle);
+
+    if (err != ESP_OK) 
+    {
+        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to open NVS Storage");
+        return -1;
+    }
+
     err = nvs_get_i32(temp_nv_handle, "update_flag", &update_flag);
 
     if (err == ESP_OK) {
         if (update_flag == 1) {
+            esp_err_t temp_err;
             int32_t ota_action_id_val;
+
+            /* Reset the OTA update flag in NVS */
             update_flag = 0;
+            temp_err = nvs_set_i32(temp_nv_handle, "update_flag", update_flag);
 
-            nvs_set_i32(temp_nv_handle, "update_flag", update_flag);
-            nvs_commit(temp_nv_handle);
+            if (temp_err != ESP_OK) 
+            {
+                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to reset the OTA update flag in NVS");
+                return -1;
+            }
 
-            ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Reboot after successful OTA update");
+            temp_err = nvs_commit(temp_nv_handle);
 
-            nvs_get_i32(temp_nv_handle, "action_id_val", &ota_action_id_val);
-            sprintf(ota_action_id_str, "%d", (int)ota_action_id_val);
+            if (temp_err != ESP_OK) 
+            {
+                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to commit the OTA update flag in NVS");
+                return -1;
+            }
+
+            /* Get the OTA action id from NVS */
+            temp_err = nvs_get_i32(temp_nv_handle, "action_id_val", &ota_action_id_val);
+
+            if (temp_err != ESP_OK) 
+            {
+                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to retreieve the OTA action id from NVS");
+                return -1;
+            }
+
+            int max_len = OTA_ACTION_ID_STR_LEN;
+            int temp_var = snprintf(ota_action_id_str, max_len, "%d", (int)ota_action_id_val);
+
+            if(temp_var >= max_len)
+            {
+                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "OTA action id string size exceeded max length of buffer");
+                return -1;
+            }
 
             ota_update_completed = 1;
+            ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Reboot after successful OTA update");
         } else {
             ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Normal reboot");
         }
