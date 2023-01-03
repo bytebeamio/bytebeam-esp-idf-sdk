@@ -457,6 +457,22 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
         ESP_LOGE(TAG, "MQTT Client start failed");
         return BB_FAILURE;
     } else {
+        ESP_LOGI(TAG, "MQTT Client started !!");
+        return BB_SUCCESS;
+    }
+}
+
+bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client)
+{
+    int ret_val = 0;
+
+    ret_val = bytebeam_hal_stop_mqtt(bytebeam_client);
+
+    if (ret_val != 0) {
+        ESP_LOGE(TAG, "MQTT Client stop failed");
+        return BB_FAILURE;
+    } else {
+        ESP_LOGI(TAG, "MQTT Client stopped !!");
         return BB_SUCCESS;
     }
 }

@@ -206,6 +206,17 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
 bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client);
 
 /**
+ * @brief Stops bytebeam MQTT client after client is started.
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ *
+ * @return
+ *      BB_SUCCESS : Bytebeam Client stopped successfully
+ *      BB_FAILURE : Bytebeam Client stop failed
+ */
+bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client);
+
+/**
  * @brief Adds action handler for handling particular action.
  *
  * @param[in] bytebeam_client bytebeam client handle

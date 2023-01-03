@@ -376,3 +376,16 @@ int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client)
 
     return 0;
 }
+
+int bytebeam_hal_stop_mqtt(bytebeam_client_t *bytebeam_client)
+{
+    esp_err_t err;
+
+    err = esp_mqtt_client_stop(bytebeam_client->client);
+
+    if (err != ESP_OK) {
+        return -1;
+    }
+
+    return 0;
+}

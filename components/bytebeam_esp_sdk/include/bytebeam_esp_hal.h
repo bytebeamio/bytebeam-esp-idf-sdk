@@ -8,6 +8,7 @@ int bytebeam_hal_restart(void);
 int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url);
 int bytebeam_hal_init(bytebeam_client_t *bytebeam_client);
 int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client);
+int bytebeam_hal_stop_mqtt(bytebeam_client_t *bytebeam_client);
 
 extern char *ota_action_id;
 

@@ -505,6 +505,11 @@ void app_main(void)
     bytebeam_add_action_handler(&bytebeam_client, handle_toggle_led, "toggle_board_led");
     bytebeam_start(&bytebeam_client);
 
+    /* Use the byteveam_stop api to stop the bytebeam client at any point of time in the code, Also
+     * You can mantain the bytebeam client start and bytebeam client stop flow as per you application.
+     */
+    // bytebeam_stop(&bytebeam_client);
+
     /* Logs can be tested once bytebeam client is started successfully, enable BYTEBEAM_LOG_TEST to 
      * test bytebeam log feature
      */
