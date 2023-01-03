@@ -11,6 +11,24 @@
 /*This macro is used to debug the sdk, we will keep all the unnecessary print under this macro*/
 #define DEBUG_BYTEBEAM_SDK false
 
+/*This macro is used to specify the maximum length of bytebeam broker url string*/
+#define BYTEBEAM_BROKER_URL_STR_LEN 100
+
+/*This macro is used to specify the maximum length of bytebeam device id string*/
+#define BYTEBEAM_DEVICE_ID_STR_LEN 10
+
+/*This macro is used to specify the maximum length of bytebeam project id string*/
+#define BYTEBEAM_PROJECT_ID_STR_LEN 100
+
+/*This macro is used to specify the maximum length of bytebeam action id string*/
+#define BYTEBEAM_ACTION_ID_STR_LEN 20
+
+/*This macro is used to specify the maximum length of bytebeam OTA url string*/
+#define BYTEBAM_OTA_URL_STR_LEN 200
+
+/*This macro is used to specify the maximum length of bytebeam mqtt topic string*/
+#define BYTEBEAM_MQTT_TOPIC_STR_LEN 200
+
 /*This macro is used to specify the maximum number of actions that need to be handled for particular device*/
 #define BYTEBEAM_NUMBER_OF_ACTIONS 10
 
@@ -34,7 +52,7 @@
 #define BYTEBEAM_LOGD(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGD, BYTEBEAM_LOG_LEVEL_DEBUG, "DEBUG", tag, fmt, ##__VA_ARGS__)
 #define BYTEBEAM_LOGV(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGV, BYTEBEAM_LOG_LEVEL_VERBOSE, "VERBOSE", tag, fmt, ##__VA_ARGS__)
 
-
+/* This enum represents Bytebeam Log Levels */
 typedef enum {
     BYTEBEAM_LOG_LEVEL_NONE,
     BYTEBEAM_LOG_LEVEL_ERROR,
@@ -64,9 +82,9 @@ typedef struct bytebeam_device_config_t {
     char *ca_cert_pem;
     char *client_cert_pem;
     char *client_key_pem;
-    char broker_uri[100];
-    char device_id[10];
-    char project_id[100];
+    char broker_uri[BYTEBEAM_BROKER_URL_STR_LEN];
+    char device_id[BYTEBEAM_DEVICE_ID_STR_LEN];
+    char project_id[BYTEBEAM_PROJECT_ID_STR_LEN];
 } bytebeam_device_config_t;
 
 typedef esp_mqtt_client_handle_t bytebeam_client_handle_t;

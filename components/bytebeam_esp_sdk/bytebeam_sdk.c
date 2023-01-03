@@ -22,7 +22,7 @@ static bytebeam_log_level_t bytebeam_log_level = BYTEBEAM_LOG_LEVEL_NONE;
 
 static const char *TAG = "BYTEBEAM_SDK";
 
-extern char *utils_read_file(char *filename)
+char *utils_read_file(char *filename)
 {
     FILE *file;
 
@@ -63,19 +63,19 @@ extern char *utils_read_file(char *filename)
 int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client)
 {
     int msg_id;
+    int qos = 1;
     char topic[200] = { 0 };
 
-    int max_len = 200;
-
+    int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
     int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/actions", device_cfg.project_id, device_cfg.device_id);
     
-    if(temp_var > max_len)
+    if(temp_var >= max_len)
     {
         ESP_LOGE(TAG, "subscribe topic size exceeded buffer size");
         return -1;
     }
 
-    msg_id = bytebeam_hal_mqtt_subscribe(client, topic, 1);
+    msg_id = bytebeam_hal_mqtt_subscribe(client, topic, qos);
 
     return msg_id;
 }
@@ -95,7 +95,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
 
     if (ret != ESP_OK) 
     {
-
         if (ret == ESP_FAIL) 
         {
             ESP_LOGE(TAG, "Failed to mount or format filesystem");
@@ -135,17 +134,29 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsString(prj_id_obj) && (prj_id_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR in getting the prject id\n");
 
+        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
 
-    strcpy(device_cfg->project_id, prj_id_obj->valuestring);
+    int max_len = BYTEBEAM_PROJECT_ID_STR_LEN;
+    int temp_var = snprintf(device_cfg->project_id, max_len, "%s", prj_id_obj->valuestring);
+
+    if(temp_var >= max_len)
+    {   
+        ESP_LOGE(TAG, "Project Id length exceeded buffer size");
+
+        cJSON_Delete(cert_json);
+        free(device_config_data);
+        return -1;
+    }
 
     cJSON *broker_name_obj = cJSON_GetObjectItem(cert_json, "broker");
 
     if (!(cJSON_IsString(broker_name_obj) && (broker_name_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing broker name");
 
+        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -155,18 +166,22 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsNumber(port_num_obj))) {
         ESP_LOGE(TAG, "ERROR parsing port number.");
 
+        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
 
     int port_int = port_num_obj->valuedouble;
-    int max_len = 100;
 
-    int temp_var = snprintf(device_cfg->broker_uri, max_len, "mqtts://%s:%d", broker_name_obj->valuestring, port_int);
+    max_len = BYTEBEAM_BROKER_URL_STR_LEN;
+    temp_var = snprintf(device_cfg->broker_uri, max_len, "mqtts://%s:%d", broker_name_obj->valuestring, port_int);
 
-    if(temp_var > max_len)
+    if(temp_var >= max_len)
     {
         ESP_LOGE(TAG, "Broker URL length exceeded buffer size");
+
+        cJSON_Delete(cert_json);
+        free(device_config_data);
         return -1;
     }
 
@@ -179,16 +194,29 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsString(device_id_obj) && (device_id_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing device id\n");
 
+        cJSON_Delete(cert_json);
+        free(device_config_data);
+        return -1;
+    }
+    
+    max_len = BYTEBEAM_DEVICE_ID_STR_LEN;
+    temp_var = snprintf(device_cfg->device_id, max_len, "%s", device_id_obj->valuestring);
+    
+    if(temp_var >= max_len)
+    {
+        ESP_LOGE(TAG, "Device Id length exceeded buffer size");
+
+        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
 
-    strcpy(device_cfg->device_id, device_id_obj->valuestring);
     cJSON *auth_obj = cJSON_GetObjectItem(cert_json, "authentication");
 
     if (cert_json == NULL || !(cJSON_IsObject(auth_obj))) {
         ESP_LOGE(TAG, "ERROR in parsing the auth JSON\n");
 
+        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -198,37 +226,46 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsString(ca_cert_obj) && (ca_cert_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing ca certificate\n");
 
+        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
 
     device_cfg->ca_cert_pem = (char *)ca_cert_obj->valuestring;
-    mqtt_cfg->broker.verification.certificate = device_cfg->ca_cert_pem;
+    mqtt_cfg->broker.verification.certificate = (const char *)device_cfg->ca_cert_pem;
 
     cJSON *device_cert_obj = cJSON_GetObjectItem(auth_obj, "device_certificate");
 
     if (!(cJSON_IsString(device_cert_obj) && (device_cert_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing device certifate\n");
 
+        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
 
     device_cfg->client_cert_pem = (char *)device_cert_obj->valuestring;
-    mqtt_cfg->credentials.authentication.certificate = device_cfg->client_cert_pem;
+    mqtt_cfg->credentials.authentication.certificate = (const char *)device_cfg->client_cert_pem;
 
     cJSON *device_private_key_obj = cJSON_GetObjectItem(auth_obj, "device_private_key");
 
     if (!(cJSON_IsString(device_private_key_obj) && (device_private_key_obj->valuestring != NULL))) {
-        ESP_LOGE(TAG, "ERROR device private key\n");
+        ESP_LOGE(TAG, "ERROR parsing device private key\n");
 
+        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
 
     device_cfg->client_key_pem = (char *)device_private_key_obj->valuestring;
-    mqtt_cfg->credentials.authentication.key = (char *)device_cfg->client_key_pem;
+    mqtt_cfg->credentials.authentication.key = (const char *)device_cfg->client_key_pem;
+  
+    /*  Do not delete the json object from memory because we are giving the reference of the certificates to the mqtt
+     *  library (see above), so it needs to be there in the memory. Ofcourse if you encounter any error you should
+     *  delete the json object to release the memory and that is handled properly (see above).
+     */
 
+    //cJSON_Delete(cert_json);
     free(device_config_data);
 
     return 0;
@@ -242,29 +279,46 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
     cJSON *action_id_obj = NULL;
 
     int action_iterator = 0;
-    char action_id[20] = { 0 };
+    char action_id[BYTEBEAM_ACTION_ID_STR_LEN] = { 0 };
 
     root = cJSON_Parse(action_received);
+
+    if (root == NULL) {
+        ESP_LOGE(TAG, "ERROR in parsing the JSON\n");
+
+        return -1;
+    }
 
     name = cJSON_GetObjectItem(root, "name");
 
     if (!(cJSON_IsString(name) && (name->valuestring != NULL))) {
         ESP_LOGE(TAG, "Error parsing action name\n");
-        goto cleanup;
+
+        cJSON_Delete(root);
         return -1;
     }
 
     ESP_LOGI(TAG, "Checking name \"%s\"\n", name->valuestring);
 
     action_id_obj = cJSON_GetObjectItem(root, "id");
-    strcpy(action_id, action_id_obj->valuestring);
 
     if (cJSON_IsString(action_id_obj) && (action_id_obj->valuestring != NULL)) {
         ESP_LOGI(TAG, "Checking version \"%s\"\n", action_id_obj->valuestring);
     } else {
         ESP_LOGE(TAG, "Error parsing action id");
 
-        goto cleanup;
+        cJSON_Delete(root);
+        return -1;
+    }
+
+    int max_len = BYTEBEAM_ACTION_ID_STR_LEN;
+    int temp_var = snprintf(action_id, max_len, "%s", action_id_obj->valuestring);
+
+    if(temp_var >= max_len)
+    {
+        ESP_LOGE(TAG, "Action Id length exceeded buffer size");
+
+        cJSON_Delete(root);
         return -1;
     }
 
@@ -288,16 +342,14 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
     } else {
         ESP_LOGE(TAG, "Error fetching payload");
 
-        goto cleanup;
+        cJSON_Delete(root);
         return -1;
     }
 
-    goto cleanup;
-
-cleanup:
-    free(payload);
-    free(name);
-    free(root);
+    /*  Deleting json object from memory after calling the respective action handlder so make sure that they will not
+     *  gonna use the json object beyond the scope of the handler as this pointer we will be dangling.
+     */
+    cJSON_Delete(root);
 
     return 0;
 }
@@ -344,6 +396,7 @@ bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_clie
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
+    
     ret_val = parse_device_config_file(&bytebeam_client->device_cfg, &bytebeam_client->mqtt_cfg);
 
     if (ret_val != 0) {
@@ -351,16 +404,23 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
         return BB_FAILURE;
     }
 
-    if ((bytebeam_hal_init(bytebeam_client)) != 0) {
-        return BB_FAILURE;
-    }
+    ret_val = bytebeam_hal_init(bytebeam_client);
 
-    return BB_SUCCESS;
+    if (ret_val != 0) {
+        ESP_LOGE(TAG, "MQTT Client init failed");
+        return BB_FAILURE;
+    } else {
+        return BB_SUCCESS;
+    }
 }
 
 bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
 {
-    if ((bytebeam_hal_start_mqtt(bytebeam_client) != 0)) {
+    int ret_val = 0;
+
+    ret_val = bytebeam_hal_start_mqtt(bytebeam_client);
+
+    if (ret_val != 0) {
         ESP_LOGE(TAG, "MQTT Client start failed");
         return BB_FAILURE;
     } else {
@@ -372,16 +432,15 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
 {
     int qos = 1;
     int msg_id = 0;
-    char topic[200] = {0};
+    char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = {0};
 
-    int max_len = 200;
- 
+    int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
     int temp_var = snprintf(topic, max_len,  "/tenants/%s/devices/%s/events/%s/jsonarray",
             bytebeam_client->device_cfg.project_id,
             bytebeam_client->device_cfg.device_id,
             stream_name);
 
-    if(temp_var > max_len)
+    if(temp_var >= max_len)
     {
         ESP_LOGE(TAG, "Publish topic size exceeded buffer size");
         return BB_FAILURE;
@@ -389,9 +448,9 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
 
     ESP_LOGI(TAG, "Topic is %s", topic);
 
-    msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, (const char *)payload, strlen(payload), qos);
-
-    if (bytebeam_client->connection_status == 1) {
+    msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, payload, strlen(payload), qos);
+    
+    if (msg_id != -1) {
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, payload);
         return BB_SUCCESS;
     } else {
@@ -401,17 +460,27 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
 }
 
 int parse_ota_json(char *payload_string, char *url_string_return)
-{
+{   
+    cJSON *pl_json = NULL;
     const cJSON *url = NULL;
     const cJSON *version = NULL;
 
-    cJSON *pl_json = cJSON_Parse(payload_string);
+    pl_json = cJSON_Parse(payload_string);
+
+    if (pl_json == NULL) {
+        ESP_LOGE(TAG, "ERROR in parsing the OTA JSON\n");
+
+        return -1;
+    }
+
     url = cJSON_GetObjectItem(pl_json, "url");
 
     if (cJSON_IsString(url) && (url->valuestring != NULL)) {
         ESP_LOGI(TAG, "Checking url \"%s\"\n", url->valuestring);
     } else {
         ESP_LOGE(TAG, "URL parsing failed");
+
+        cJSON_Delete(pl_json);
         return -1;
     }
 
@@ -421,21 +490,26 @@ int parse_ota_json(char *payload_string, char *url_string_return)
         ESP_LOGI(TAG, "Checking version \"%s\"\n", version->valuestring);
     } else {
         ESP_LOGE(TAG, "FW version parsing failed");
+
+        cJSON_Delete(pl_json);
         return -1;
     }
 
-    int max_len = 200;
-
+    int max_len = BYTEBAM_OTA_URL_STR_LEN;
     int temp_var = snprintf(url_string_return, max_len, "%s", url->valuestring);
 
-    if(temp_var > max_len)
+    if(temp_var >= max_len)
     {
         ESP_LOGE(TAG, "FW update URL exceeded buffer size");
+
+        cJSON_Delete(pl_json);
         return -1;
     }
 
     ESP_LOGI(TAG, "The constructed URL is: %s", url_string_return);
 
+    cJSON_Delete(pl_json);
+    
     return 0;
 }
 
@@ -454,14 +528,17 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
     cJSON *action_errors_json = NULL;
     cJSON *seq_json = NULL;
     char *string_json = NULL;
-
     const char *ota_states[1] = { "" };
+
+    int qos = 1;
+    int msg_id = 0;
+    char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = {0};
 
     action_status_json_list = cJSON_CreateArray();
 
     if (action_status_json_list == NULL) {
         ESP_LOGE(TAG, "Json Init failed.");
-        goto END;
+
         return -1;
     }
 
@@ -469,7 +546,8 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
 
     if (action_status_json == NULL) {
         ESP_LOGE(TAG, "Json add failed.");
-        goto END;
+
+        cJSON_Delete(action_status_json_list);
         return -1;
     }
 
@@ -481,7 +559,8 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
 
     if (timestamp_json == NULL) {
         ESP_LOGE(TAG, "Json add time stamp failed.");
-        goto END;
+
+        cJSON_Delete(action_status_json_list);
         return -1;
     }
 
@@ -492,7 +571,8 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
 
     if (seq_json == NULL) {
         ESP_LOGE(TAG, "Json add seq id failed.");
-        goto END;
+     
+        cJSON_Delete(action_status_json_list);
         return -1;
     }
 
@@ -502,7 +582,8 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
 
     if (device_status_json == NULL) {
         ESP_LOGE(TAG, "Json add device status failed.");
-        goto END;
+
+        cJSON_Delete(action_status_json_list);
         return -1;
     }
 
@@ -513,7 +594,8 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
 
     if (action_errors_json == NULL) {
         ESP_LOGE(TAG, "Json add action errors failed.");
-        goto END;
+
+        cJSON_Delete(action_status_json_list);
         return -1;
     }
 
@@ -523,7 +605,8 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
 
     if (action_id_json == NULL) {
         ESP_LOGE(TAG, "Json add action_id failed.");
-        goto END;
+
+        cJSON_Delete(action_status_json_list);
         return -1;
     }
 
@@ -533,7 +616,8 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
 
     if (percentage_json == NULL) {
         ESP_LOGE(TAG, "Json add progress percentage failed.");
-        goto END;
+
+        cJSON_Delete(action_status_json_list);
         return -1;
     }
 
@@ -542,34 +626,47 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
     cJSON_AddItemToArray(action_status_json_list, action_status_json);
 
     string_json = cJSON_Print(action_status_json_list);
+
+    if(string_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json string print failed.");
+
+        cJSON_Delete(action_status_json_list);
+        return -1;
+    } 
+
+#if DEBUG_BYTEBEAM_SDK
     ESP_LOGI(TAG, "\nTrying to print:\n%s\n", string_json);
+#endif
 
-    char topic[300] = {0};
-
-    int max_len = 300;
-    
+    int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
     int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/action/status", device_cfg.project_id, device_cfg.device_id);
 
-    if(temp_var > max_len)
+    if(temp_var >= max_len)
     {
         ESP_LOGE(TAG, "action status topic size exceeded topic buffer size");
+
+        cJSON_Delete(action_status_json_list);
+        cJSON_free(string_json);
         return -1;
     }
 
-    ESP_LOGI(TAG, "\n%s\n", topic);
+    ESP_LOGI(TAG, "\nTopic is %s\n", topic);
 
-    int msg_id = bytebeam_hal_mqtt_publish(client, topic, string_json, strlen(string_json), 1);
+    msg_id = bytebeam_hal_mqtt_publish(client, topic, string_json, strlen(string_json), qos);
 
     if (msg_id != -1) {
         ESP_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, string_json);
     } else {
         ESP_LOGE(TAG, "Publish Failed");
+
+        cJSON_Delete(action_status_json_list);
+        cJSON_free(string_json);
         return -1;
     }
 
-END:
     cJSON_Delete(action_status_json_list);
-    free(string_json);
+    cJSON_free(string_json);
 
     return 0;
 }
@@ -580,18 +677,60 @@ int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char *ota_u
     ESP_LOGI(TAG, "Starting OTA.....");
 
     if ((bytebeam_hal_ota(bytebeam_client, ota_url)) != -1) {
+        esp_err_t err;
         nvs_handle_t nvs_handle;
         int32_t update_flag = 1;
         int32_t action_id_val = (int32_t)(atoi(ota_action_id));
 
-        nvs_flash_init();
-        nvs_open("test_storage", NVS_READWRITE, &nvs_handle);
-        nvs_set_i32(nvs_handle, "update_flag", update_flag);
-        nvs_commit(nvs_handle);
-        nvs_set_i32(nvs_handle, "action_id_val", action_id_val);
-        nvs_commit(nvs_handle);
-        nvs_close(nvs_handle);
+        err = nvs_flash_init();
 
+        if(err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "NVS flash init failed.");
+            return -1;
+        }
+
+        err = nvs_open("test_storage", NVS_READWRITE, &nvs_handle);
+
+        if (err != ESP_OK) 
+        {
+            ESP_LOGE(TAG, "Failed to open NVS Storage");
+            return -1;
+        }
+
+        err = nvs_set_i32(nvs_handle, "update_flag", update_flag);
+
+        if (err != ESP_OK) 
+        {
+            ESP_LOGE(TAG, "Failed to set the OTA update flag in NVS");
+            return -1;
+        }
+
+        err = nvs_commit(nvs_handle);
+
+        if (err != ESP_OK) 
+        {
+            ESP_LOGE(TAG, "Failed to commit the OTA update flag in NVS");
+            return -1;
+        }
+
+        nvs_set_i32(nvs_handle, "action_id_val", action_id_val);
+
+        if (err != ESP_OK) 
+        {
+            ESP_LOGE(TAG, "Failed to set the OTA action id in NVS");
+            return -1;
+        }
+
+        err = nvs_commit(nvs_handle);
+
+        if (err != ESP_OK) 
+        {
+            ESP_LOGE(TAG, "Failed to commit the OTA action id in NVS");
+            return -1;
+        }
+
+        nvs_close(nvs_handle);
         bytebeam_hal_restart();
     } else {
         ESP_LOGE(TAG, "Firmware Upgrade Failed");
@@ -608,7 +747,7 @@ int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char *ota_u
 
 bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id)
 {
-    char constructed_url[200] = { 0 };
+    char constructed_url[BYTEBAM_OTA_URL_STR_LEN] = { 0 };
 
     if ((parse_ota_json(payload_string, constructed_url)) == -1) {
         ESP_LOGE(TAG, "Firmware upgrade failed due to error in parsing OTA JSON");
@@ -789,6 +928,8 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     if (temp_var >= buffer_size) 
     {
         ESP_LOGE(TAG, "Failed to Get the message for Bytebeam Log.");
+
+        free(message_buffer);
         return BB_FAILURE;
     }
 
@@ -796,6 +937,8 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     if (device_log_json_list == NULL) {
         ESP_LOGE(TAG, "Log Json Init failed.");
+
+        free(message_buffer);
         return BB_FAILURE;
     }
 
@@ -803,18 +946,23 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     if (device_log_json == NULL) {
         ESP_LOGE(TAG, "Log Json add failed.");
+
         cJSON_Delete(device_log_json_list);
+        free(message_buffer);
         return BB_FAILURE;
     }
     
     struct timeval te;
     gettimeofday(&te, NULL); // get current time
     long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000;
+
     timestamp_json = cJSON_CreateNumber(milliseconds);
 
     if (timestamp_json == NULL) {
         ESP_LOGE(TAG, "Log Json add time stamp failed.");
+
         cJSON_Delete(device_log_json_list);
+        free(message_buffer);
         return BB_FAILURE;
     }
 
@@ -825,7 +973,9 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     if (sequence_json == NULL) {
         ESP_LOGE(TAG, "Log Json add sequence id failed.");
+
         cJSON_Delete(device_log_json_list);
+        free(message_buffer);
         return BB_FAILURE;
     }
 
@@ -835,7 +985,9 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     if (log_level_json == NULL) {
         ESP_LOGE(TAG, "Log Json add level failed.");
+
         cJSON_Delete(device_log_json_list);
+        free(message_buffer);
         return BB_FAILURE;
     }
 
@@ -845,7 +997,9 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     if (log_tag_json == NULL) {
         ESP_LOGE(TAG, "Log Json add tag failed.");
+
         cJSON_Delete(device_log_json_list);
+        free(message_buffer);
         return BB_FAILURE;
     }
 
@@ -855,7 +1009,9 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     if (log_message_json == NULL) {
         ESP_LOGE(TAG, "Log Json add message failed.");
+
         cJSON_Delete(device_log_json_list);
+        free(message_buffer);
         return BB_FAILURE;
     }
 
@@ -865,6 +1021,15 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     log_string_json = cJSON_Print(device_log_json_list);
 
+    if(log_string_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json string print failed.");
+
+        cJSON_Delete(device_log_json_list);
+        free(message_buffer);
+        return BB_FAILURE;
+    } 
+
 #if DEBUG_BYTEBEAM_SDK
     ESP_LOGI(TAG, "\n Log to Send :\n%s\n", log_string_json);
 #endif
@@ -872,7 +1037,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     int ret_val = bytebeam_publish_to_stream(bytebeam_log_client, "Logs", log_string_json);
 
     cJSON_Delete(device_log_json_list);
-    free(log_string_json);
+    cJSON_free(log_string_json);
     free(message_buffer);
 
     return ret_val;
