@@ -69,7 +69,6 @@ static int toggle_led_cmd = 0;
 
 static uint32_t led_duty_cycle = 0;
 static int update_config_cmd = 0;
-static char *update_config_str = NULL;
 
 char led_status[200];
 
@@ -267,6 +266,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     if (device_shadow_json_list == NULL) {
         ESP_LOGE(TAG, "Json Init failed.");
+
         return -1;
     }
 
@@ -274,6 +274,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     if (device_shadow_json == NULL) {
         ESP_LOGE(TAG, "Json add failed.");
+
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
@@ -285,6 +286,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     if (timestamp_json == NULL) {
         ESP_LOGE(TAG, "Json add time stamp failed.");
+
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
@@ -296,6 +298,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     if (sequence_json == NULL) {
         ESP_LOGE(TAG, "Json add sequence id failed.");
+
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
@@ -306,6 +309,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     if (device_status_json == NULL) {
         ESP_LOGE(TAG, "Json add device status failed.");
+
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
@@ -315,12 +319,21 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
     cJSON_AddItemToArray(device_shadow_json_list, device_shadow_json);
 
     string_json = cJSON_Print(device_shadow_json_list);
+
+    if(string_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json string print failed.");
+
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
     ESP_LOGI(TAG, "\nStatus to send:\n%s\n", string_json);
 
     int ret_val = bytebeam_publish_to_stream(bytebeam_client, "device_shadow", string_json);
 
     cJSON_Delete(device_shadow_json_list);
-    free(string_json);
+    cJSON_free(string_json);
 
     return ret_val;
 }
@@ -329,39 +342,6 @@ static void app_start(bytebeam_client_t *bytebeam_client)
 {
     while (1) {
         if(update_config_cmd) {
-            cJSON *root = NULL;
-            cJSON *name = NULL;
-            cJSON *version = NULL;
-            cJSON *step_value = NULL;
-
-            /* Parse the received json */
-            root = cJSON_Parse(update_config_str);
-
-            name = cJSON_GetObjectItem(root, "name");
-
-            if (!(cJSON_IsString(name) && (name->valuestring != NULL))) {
-                ESP_LOGE(TAG, "Error parsing update config name\n");
-            }
-            ESP_LOGI(TAG, "Checking update config name \"%s\"\n", name->valuestring);
-
-            version = cJSON_GetObjectItem(root, "version");
-
-            if (!(cJSON_IsString(version) && (version->valuestring != NULL))) {
-                ESP_LOGE(TAG, "Error parsing update config version\n");
-            }
-            ESP_LOGI(TAG, "Checking update config version \"%s\"\n", version->valuestring);
-
-            step_value = cJSON_GetObjectItem(root, "step_value");
-
-            if (!(cJSON_IsNumber(step_value))) {
-                ESP_LOGE(TAG, "Error parsing update config step value\n");
-            }
-            ESP_LOGI(TAG, "Checking update config step value %d\n", (int)step_value->valuedouble);
-            
-            /* Generate the duty cycle */
-            uint32_t ledc_res = (uint32_t)round(pow(2,LEDC_DUTY_RES)) - 1;
-            led_duty_cycle = ((ledc_res) * (step_value->valuedouble/LEDC_STEP_SIZE));
-            
             /* Update the LED */
             update_led();
 
@@ -374,7 +354,6 @@ static void app_start(bytebeam_client_t *bytebeam_client)
                 ESP_LOGE(TAG, "Publish to device shadow failed");
             }
 
-            update_config_str = NULL;
             update_config_cmd = 0;
         }
 
@@ -441,7 +420,59 @@ static void sync_time_from_ntp(void)
 int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *action_id) 
 {
     update_config_cmd = 1;
-    update_config_str = args;
+
+    cJSON *root = NULL;
+    cJSON *name = NULL;
+    cJSON *version = NULL;
+    cJSON *step_value = NULL;
+
+    /* Parse the received json */
+    root = cJSON_Parse(args);
+
+    if (root == NULL) {
+        ESP_LOGE(TAG, "ERROR in parsing the JSON\n");
+
+        return -1;
+    }
+
+    name = cJSON_GetObjectItem(root, "name");
+
+    if (!(cJSON_IsString(name) && (name->valuestring != NULL))) {
+        ESP_LOGE(TAG, "Error parsing update config name\n");
+
+        cJSON_Delete(root);
+        return -1;
+    }
+
+    ESP_LOGI(TAG, "Checking update config name \"%s\"\n", name->valuestring);
+
+    version = cJSON_GetObjectItem(root, "version");
+
+    if (!(cJSON_IsString(version) && (version->valuestring != NULL))) {
+        ESP_LOGE(TAG, "Error parsing update config version\n");
+
+        cJSON_Delete(root);
+        return -1;
+    }
+
+    ESP_LOGI(TAG, "Checking update config version \"%s\"\n", version->valuestring);
+
+    step_value = cJSON_GetObjectItem(root, "step_value");
+
+    if (!(cJSON_IsNumber(step_value))) {
+        ESP_LOGE(TAG, "Error parsing update config step value\n");
+
+        cJSON_Delete(root);
+        return -1;
+    }
+
+    ESP_LOGI(TAG, "Checking update config step value %d\n", (int)step_value->valuedouble);
+
+    /* Generate the duty cycle */
+    uint32_t ledc_res = (uint32_t)round(pow(2,LEDC_DUTY_RES)) - 1;
+    led_duty_cycle = ((ledc_res) * (step_value->valuedouble/LEDC_STEP_SIZE));
+
+    cJSON_Delete(root);
 
     if ((bytebeam_publish_action_completed(bytebeam_client, action_id)) != 0) {
         ESP_LOGE(TAG, "Failed to Publish action response for Update Config action");
