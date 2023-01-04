@@ -286,10 +286,6 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
         return -1;
     }
 
-    bytebeam_log_set_client(bytebeam_client);
-    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL);
-    bytebeam_reset_action_handler_array(bytebeam_client);
-
     err = nvs_flash_init();
 
     if(err != ESP_OK)
@@ -361,6 +357,19 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
     }
 
     nvs_close(temp_nv_handle);
+    return 0;
+}
+
+int bytebeam_hal_destroy(bytebeam_client_t *bytebeam_client)
+{
+    esp_err_t err;
+
+    err = esp_mqtt_client_destroy(bytebeam_client->client);
+
+    if (err != ESP_OK) {
+        return -1;
+    }
+
     return 0;
 }
 

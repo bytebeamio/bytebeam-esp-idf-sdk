@@ -14,6 +14,8 @@
 
 #include "esp_sntp.h"
 
+cJSON *cert_json = NULL;
+
 char *ota_action_id = "";
 static int function_handler_index = 0;
 
@@ -100,7 +102,12 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
 
     const char *json_file = (const char *)device_config_data;
 
-    cJSON *cert_json = cJSON_Parse(json_file);
+    /*  Do not delete the cert json object from memory because we are giving the reference of the certificates to the mqtt
+     *  library (see below), so it needs to be there in the memory. Ofcourse we will delete the json object to release the
+     *  memory and that is handled properly in bytebeam sdk cleanup.
+     */
+
+    cert_json = cJSON_Parse(json_file);
 
     if (cert_json == NULL) {
         ESP_LOGE(TAG, "ERROR in parsing the JSON\n");
@@ -114,7 +121,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsString(prj_id_obj) && (prj_id_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR in getting the prject id\n");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -126,7 +132,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     {   
         ESP_LOGE(TAG, "Project Id length exceeded buffer size");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -136,7 +141,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsString(broker_name_obj) && (broker_name_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing broker name");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -146,7 +150,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsNumber(port_num_obj))) {
         ESP_LOGE(TAG, "ERROR parsing port number.");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -160,7 +163,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     {
         ESP_LOGE(TAG, "Broker URL length exceeded buffer size");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -174,7 +176,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsString(device_id_obj) && (device_id_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing device id\n");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -186,7 +187,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     {
         ESP_LOGE(TAG, "Device Id length exceeded buffer size");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -196,7 +196,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (cert_json == NULL || !(cJSON_IsObject(auth_obj))) {
         ESP_LOGE(TAG, "ERROR in parsing the auth JSON\n");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -206,7 +205,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsString(ca_cert_obj) && (ca_cert_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing ca certificate\n");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -219,7 +217,6 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsString(device_cert_obj) && (device_cert_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing device certifate\n");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
@@ -232,23 +229,69 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (!(cJSON_IsString(device_private_key_obj) && (device_private_key_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing device private key\n");
 
-        cJSON_Delete(cert_json);
         free(device_config_data);
         return -1;
     }
 
     device_cfg->client_key_pem = (char *)device_private_key_obj->valuestring;
     mqtt_cfg->credentials.authentication.key = (const char *)device_cfg->client_key_pem;
-  
-    /*  Do not delete the json object from memory because we are giving the reference of the certificates to the mqtt
-     *  library (see above), so it needs to be there in the memory. Ofcourse if you encounter any error you should
-     *  delete the json object to release the memory and that is handled properly (see above).
-     */
 
-    //cJSON_Delete(cert_json);
     free(device_config_data);
 
     return 0;
+}
+
+static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
+{
+    /* We will use this function in bytebeam client init and bytebeam client destroy phase, So to make sure if
+     * bytebeam client is not running then we don't have any memory leaks (mostly solving pointer issues) :)
+     */
+
+#if DEBUG_BYTEBEAM_SDK
+    ESP_LOGI(TAG, "Cleaning Up Bytebeam SDK");
+#endif
+
+    // clearing bytebeam device configuration
+    bytebeam_client->device_cfg.ca_cert_pem = NULL;
+    bytebeam_client->device_cfg.client_cert_pem = NULL;
+    bytebeam_client->device_cfg.client_key_pem = NULL;
+    memset(bytebeam_client->device_cfg.broker_uri, 0x00, sizeof(bytebeam_client->device_cfg.broker_uri));
+    memset(bytebeam_client->device_cfg.device_id , 0x00, sizeof(bytebeam_client->device_cfg.device_id));
+    memset(bytebeam_client->device_cfg.project_id, 0x00, sizeof(bytebeam_client->device_cfg.project_id));
+
+    // clearing bytebeam mqtt client
+    bytebeam_client->client = NULL;
+
+    // clearing bytebeam mqtt configuration
+    memset(&(bytebeam_client->mqtt_cfg), 0x00, sizeof(bytebeam_client->mqtt_cfg));
+
+    // clearing bytebeam action functions array
+    bytebeam_reset_action_handler_array(bytebeam_client);
+
+    // clearing bytebeam connection status
+    bytebeam_client->connection_status = 0;
+
+    // clearing OTA action id
+    ota_action_id = NULL;
+
+    // clearing bytebeam log client
+    bytebeam_log_set_client(NULL);
+
+    // clearing bytebeam log level
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_NONE);
+
+    // clearing certifciate json object
+    if(cert_json != NULL) {
+        cJSON_Delete(cert_json);
+        cert_json = NULL;
+    #if DEBUG_BYTEBEAM_SDK
+        ESP_LOGI(TAG, "Certificate JSON object deleted");
+    #endif
+    }
+
+#if DEBUG_BYTEBEAM_SDK
+    ESP_LOGI(TAG, "Bytebeam SDK Cleanup done !!");
+#endif
 }
 
 int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client)
@@ -430,21 +473,51 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
     
-    ret_val = parse_device_config_file(&bytebeam_client->device_cfg, &bytebeam_client->mqtt_cfg);
+    ret_val = parse_device_config_file(&(bytebeam_client->device_cfg), &(bytebeam_client->mqtt_cfg));
 
     if (ret_val != 0) {
-        ESP_LOGE(TAG, "MQTT init failed due to error in parsing device config JSON");
+        ESP_LOGE(TAG, "Bytebeam Client init failed due to error in parsing device config JSON");
+
+        /* This call will clearing all the bytebeam sdk variables so to avoid any memory leaks further */
+        bytebeam_sdk_cleanup(bytebeam_client);
         return BB_FAILURE;
     }
 
     ret_val = bytebeam_hal_init(bytebeam_client);
 
     if (ret_val != 0) {
-        ESP_LOGE(TAG, "MQTT Client init failed");
+        ESP_LOGE(TAG, "Bytebeam Client init failed");
+
+        /* This call will clearing all the bytebeam sdk variables so to avoid any memory leaks further */
+        bytebeam_sdk_cleanup(bytebeam_client);
         return BB_FAILURE;
-    } else {
-        return BB_SUCCESS;
     }
+
+    bytebeam_log_set_client(bytebeam_client);
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL);
+
+    ESP_LOGI(TAG, "Bytebeam Client initialized !!");
+
+    return BB_SUCCESS;
+}
+
+bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client)
+{
+    int ret_val = 0;
+
+    ret_val = bytebeam_hal_destroy(bytebeam_client);
+
+    if (ret_val != 0) {
+        ESP_LOGE(TAG, "Bytebeam Client destroy failed");
+        return BB_FAILURE;
+    }
+
+    /* This call will clearing all the bytebeam sdk variables so to avoid any memory leaks further */
+    bytebeam_sdk_cleanup(bytebeam_client);
+
+    ESP_LOGI(TAG, "Bytebeam Client destroyed !!");
+
+    return BB_SUCCESS;
 }
 
 bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
@@ -454,10 +527,10 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
     ret_val = bytebeam_hal_start_mqtt(bytebeam_client);
 
     if (ret_val != 0) {
-        ESP_LOGE(TAG, "MQTT Client start failed");
+        ESP_LOGE(TAG, "Bytebeam Client start failed");
         return BB_FAILURE;
     } else {
-        ESP_LOGI(TAG, "MQTT Client started !!");
+        ESP_LOGI(TAG, "Bytebeam Client started !!");
         return BB_SUCCESS;
     }
 }
@@ -469,10 +542,10 @@ bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client)
     ret_val = bytebeam_hal_stop_mqtt(bytebeam_client);
 
     if (ret_val != 0) {
-        ESP_LOGE(TAG, "MQTT Client stop failed");
+        ESP_LOGE(TAG, "Bytebam Client stop failed");
         return BB_FAILURE;
     } else {
-        ESP_LOGI(TAG, "MQTT Client stopped !!");
+        ESP_LOGI(TAG, "Bytebeam Client stopped !!");
         return BB_SUCCESS;
     }
 }

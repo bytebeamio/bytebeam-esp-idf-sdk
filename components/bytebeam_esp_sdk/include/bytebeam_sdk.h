@@ -139,10 +139,23 @@ typedef enum {
  * @param[in] bytebeam_client bytebeam client handle
  * 
  * @return
- *      BB_SUCCESS : Bytebeam Client successfully initialised
- *      BB_FAILURE : Bytebeam Client initialisation failed 
+ *      BB_SUCCESS : Bytebeam Client successfully initialized
+ *      BB_FAILURE : Bytebeam Client initialization failed
  */
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client);
+
+/**
+ * @brief Destroys bytebeam MQTT client after the client is initialized
+ *
+ * @note  Cannot be called from the action function handler
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ *
+ * @return
+ *      BB_SUCCESS : Bytebeam Client successfully destroyed
+ *      BB_FAILURE : Bytebeam Client destroy failed
+ */
+bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client);
 
 /**
  * @brief Publish response message after particular action is completed.
@@ -207,6 +220,8 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client);
 
 /**
  * @brief Stops bytebeam MQTT client after client is started.
+ *
+ * @note  Cannot be called from the action function handler
  *
  * @param[in] bytebeam_client bytebeam client handle
  *

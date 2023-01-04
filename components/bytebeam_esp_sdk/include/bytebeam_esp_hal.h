@@ -7,6 +7,7 @@ int bytebeam_hal_mqtt_publish(bytebeam_client_handle_t client, char *topic, char
 int bytebeam_hal_restart(void);
 int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url);
 int bytebeam_hal_init(bytebeam_client_t *bytebeam_client);
+int bytebeam_hal_destroy(bytebeam_client_t *bytebeam_client);
 int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client);
 int bytebeam_hal_stop_mqtt(bytebeam_client_t *bytebeam_client);
 

@@ -493,7 +493,7 @@ void app_main(void)
     bytebeam_init(&bytebeam_client);
 
     /* Action Handling can be tested once bytebeam client is initialized successfully and before adding
-     * any action, enable BYTEBEAM_ACTION_HANDLING_TEST to test action handing feature
+     * any action, enable BYTEBEAM_ACTION_HANDLING_TEST macro to test action handing feature
      */
 #if BYTEBEAM_ACTION_HANDLING_TEST
     action_handling_positive_test();
@@ -505,17 +505,22 @@ void app_main(void)
     bytebeam_add_action_handler(&bytebeam_client, handle_toggle_led, "toggle_board_led");
     bytebeam_start(&bytebeam_client);
 
-    /* Use the byteveam_stop api to stop the bytebeam client at any point of time in the code, Also
-     * You can mantain the bytebeam client start and bytebeam client stop flow as per you application.
-     */
-    // bytebeam_stop(&bytebeam_client);
-
-    /* Logs can be tested once bytebeam client is started successfully, enable BYTEBEAM_LOG_TEST to 
-     * test bytebeam log feature
+    /* Bytebeam Logs can be tested once bytebeam client is started successfully, enable BYTEBEAM_LOG_TEST
+     * macro to test bytebeam log feature
      */
 #if BYTEBEAM_LOG_TEST
     bytebeam_log_test();
 #endif
+
+    /* Use the bytebeam_stop api to stop the bytebeam client at any point of time in the code, Also you
+     * can mantain the bytebeam client start and bytebeam client stop flow as per you application needs
+     */
+    // bytebeam_stop(&bytebeam_client);
+
+    /* Use the bytebeam_destroy api to destroy the bytebeam client at any point of time in the code, Also
+     * you can mantain the bytebeam cient init and bytebeam client destroy flow as per you application needs
+     */
+    // bytebeam_destroy(&bytebeam_client);
 
     app_start(&bytebeam_client);
 }
