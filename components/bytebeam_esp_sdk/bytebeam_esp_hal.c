@@ -290,6 +290,14 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
     bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL);
     bytebeam_reset_action_handler_array(bytebeam_client);
 
+    err = nvs_flash_init();
+
+    if(err != ESP_OK)
+    {
+        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "NVS flash init failed.");
+        return -1;
+    }
+
     err = nvs_open("test_storage", NVS_READWRITE, &temp_nv_handle);
 
     if (err != ESP_OK) 
