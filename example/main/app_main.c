@@ -419,8 +419,6 @@ static void sync_time_from_ntp(void)
 /* Handler for update_config action */
 int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *action_id) 
 {
-    update_config_cmd = 1;
-
     cJSON *root = NULL;
     cJSON *name = NULL;
     cJSON *version = NULL;
@@ -432,6 +430,10 @@ int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *a
     if (root == NULL) {
         ESP_LOGE(TAG, "ERROR in parsing the JSON\n");
 
+        if ((bytebeam_publish_action_failed(bytebeam_client, action_id)) != 0) {
+            ESP_LOGE(TAG, "Failed to Publish action failed response for Update Config action");
+        }
+
         return -1;
     }
 
@@ -439,6 +441,10 @@ int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *a
 
     if (!(cJSON_IsString(name) && (name->valuestring != NULL))) {
         ESP_LOGE(TAG, "Error parsing update config name\n");
+
+        if ((bytebeam_publish_action_failed(bytebeam_client, action_id)) != 0) {
+            ESP_LOGE(TAG, "Failed to Publish action failed response for Update Config action");
+        }
 
         cJSON_Delete(root);
         return -1;
@@ -451,6 +457,10 @@ int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *a
     if (!(cJSON_IsString(version) && (version->valuestring != NULL))) {
         ESP_LOGE(TAG, "Error parsing update config version\n");
 
+        if ((bytebeam_publish_action_failed(bytebeam_client, action_id)) != 0) {
+            ESP_LOGE(TAG, "Failed to Publish action failed response for Update Config action");
+        }
+
         cJSON_Delete(root);
         return -1;
     }
@@ -461,6 +471,10 @@ int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *a
 
     if (!(cJSON_IsNumber(step_value))) {
         ESP_LOGE(TAG, "Error parsing update config step value\n");
+
+        if ((bytebeam_publish_action_failed(bytebeam_client, action_id)) != 0) {
+            ESP_LOGE(TAG, "Failed to Publish action failed response for Update Config action");
+        }
 
         cJSON_Delete(root);
         return -1;
@@ -474,8 +488,10 @@ int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *a
 
     cJSON_Delete(root);
 
+    update_config_cmd = 1;
+
     if ((bytebeam_publish_action_completed(bytebeam_client, action_id)) != 0) {
-        ESP_LOGE(TAG, "Failed to Publish action response for Update Config action");
+        ESP_LOGE(TAG, "Failed to Publish action completed response for Update Config action");
 		return -1;
     }
 
@@ -488,7 +504,7 @@ int handle_toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *acti
     toggle_led_cmd = 1;
 
     if ((bytebeam_publish_action_completed(bytebeam_client, action_id)) != 0) {
-        ESP_LOGE(TAG, "Failed to Publish action response for Toggle LED action");
+        ESP_LOGE(TAG, "Failed to Publish action completed response for Toggle LED action");
 		return -1;
     }
 
