@@ -234,6 +234,10 @@ bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client);
 /**
  * @brief Adds action handler for handling particular action.
  *
+ * @note Arguments of the action handler function is generated dynamically inside the SDK and it will be freed after
+ *       executing the action handler function. So make sure you are not using it outside the scope of the action
+ *       handler function as this may cause memory leaks in your application.
+ *
  * @param[in] bytebeam_client bytebeam client handle
  * @param[in] func_ptr        pointer to action handler function
  * @param[in] func_name       action name 

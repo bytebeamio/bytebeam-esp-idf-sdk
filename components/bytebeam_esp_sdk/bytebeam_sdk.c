@@ -119,7 +119,7 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     cJSON *prj_id_obj = cJSON_GetObjectItem(cert_json, "project_id");
 
     if (!(cJSON_IsString(prj_id_obj) && (prj_id_obj->valuestring != NULL))) {
-        ESP_LOGE(TAG, "ERROR in getting the prject id\n");
+        ESP_LOGE(TAG, "ERROR in getting the project id\n");
 
         free(device_config_data);
         return -1;
