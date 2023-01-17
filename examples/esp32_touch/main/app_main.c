@@ -69,12 +69,13 @@ static void configure_led(void)
 }
 
 
-uint16_t raw_touch_values(){
-     uint16_t touch_value;
-      for (int i = 0; i < TOUCH_PAD_MAX; i++) {
+uint16_t raw_touch_values()
+{
+    uint16_t touch_value;
+    for (int i = 0; i < TOUCH_PAD_MAX; i++) {
         touch_pad_read(i, &touch_value);
-      }
-     return touch_value;
+    }
+    return touch_value;
 }
 
 static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
@@ -136,8 +137,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     int temp_var = snprintf(temp_buff, max_len, "LED is %s!", led_state == true ? "ON" : "OFF");
 
-    if(temp_var > max_len)
-    {
+    if (temp_var > max_len) {
         ESP_LOGE(TAG, "device status string size exceeded max length of buffer");
     }
 
@@ -150,8 +150,19 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
     }
 
     cJSON_AddItemToObject(device_shadow_json, "Status", device_status_json);
-     
-    
+
+
+    state_json = cJSON_CreateNumber(led_state);
+
+    /*if (state_json == NULL) {
+        ESP_LOGE(TAG, "Json add time stamp failed.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }*/
+
+    cJSON_AddItemToObject(device_shadow_json, "state", state_json);
+
+
     touch_json = cJSON_CreateNumber(touch_value);
 
     if (touch_json == NULL) {
@@ -159,7 +170,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
-    
+
     cJSON_AddItemToObject(device_shadow_json, "touch", touch_json);
 
     cJSON_AddItemToArray(device_shadow_json_list, device_shadow_json);
@@ -244,7 +255,7 @@ int toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
 
     if ((bytebeam_publish_action_completed(bytebeam_client, action_id)) != 0) {
         ESP_LOGE(TAG, "Failed to Publish action response for Toggle LED action");
-		return -1;
+        return -1;
     }
 
     return 0;
@@ -252,7 +263,7 @@ int toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
 
 static void tp_example_touch_pad_init(void)
 {
-    for (int i = 0;i< TOUCH_PAD_MAX;i++) {
+    for (int i = 0; i < TOUCH_PAD_MAX; i++) {
         touch_pad_config(i, 0);
     }
 }
@@ -286,7 +297,7 @@ void app_main(void)
     tp_example_touch_pad_init();
     bytebeam_init(&bytebeam_client);
     bytebeam_add_action_handler(&bytebeam_client, handle_ota, "update_firmware");
-    bytebeam_add_action_handler(&bytebeam_client, toggle_led, "toggle_board_led");
+    bytebeam_add_action_handler(&bytebeam_client, toggle_led, "toggel_board_led");
     bytebeam_start(&bytebeam_client);
 
     app_start(&bytebeam_client);

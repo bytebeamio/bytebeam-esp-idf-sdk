@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.5)
 # (Not part of the boilerplate)
 # This example uses an extra component for common functions such as Wi-Fi and Ethernet connection.
 set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_examples_common
-                         ../components)
+                         ../../components)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(bytebeam_example_app)
+project(bytebeam_sht_app)
 
