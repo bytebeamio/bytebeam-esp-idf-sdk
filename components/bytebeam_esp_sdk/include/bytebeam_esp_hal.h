@@ -13,6 +13,5 @@ extern char *ota_action_id;
 int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, esp_mqtt_client_handle_t client);
 int bytebeam_handle_actions(char *action_received, esp_mqtt_client_handle_t client, bytebeam_client_t *bytebeam_client);
 int publish_action_status(bytebeam_device_config_t device_cfg, char *action_id, int percentage, bytebeam_client_handle_t client, char *status, char *error_message);
-void bytebeam_init_action_handler_array(bytebeam_action_functions_map_t *action_handler_array);
 
 #endif

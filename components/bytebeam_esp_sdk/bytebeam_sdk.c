@@ -12,9 +12,10 @@
 #include "nvs_flash.h"
 #include "esp_spiffs.h"
 
+#include "esp_sntp.h"
 
 char *ota_action_id = "";
-
+static int function_handler_index = 0;
 static const char *TAG = "BYTEBEAM_SDK";
 
 extern char *utils_read_file(char *filename)
@@ -165,9 +166,9 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
         return -1;
     }
 
-    mqtt_cfg->uri = device_cfg->broker_uri;
+    mqtt_cfg->broker.address.uri = device_cfg->broker_uri;
 
-    ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
+    ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->broker.address.uri);
 
     cJSON *device_id_obj = cJSON_GetObjectItem(cert_json, "device_id");
 
@@ -198,7 +199,7 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     }
 
     device_cfg->ca_cert_pem = (char *)ca_cert_obj->valuestring;
-    mqtt_cfg->cert_pem = device_cfg->ca_cert_pem;
+    mqtt_cfg->broker.verification.certificate = device_cfg->ca_cert_pem;
 
     cJSON *device_cert_obj = cJSON_GetObjectItem(auth_obj, "device_certificate");
 
@@ -210,7 +211,7 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     }
 
     device_cfg->client_cert_pem = (char *)device_cert_obj->valuestring;
-    mqtt_cfg->client_cert_pem = device_cfg->client_cert_pem;
+    mqtt_cfg->credentials.authentication.certificate = device_cfg->client_cert_pem;
 
     cJSON *device_private_key_obj = cJSON_GetObjectItem(auth_obj, "device_private_key");
 
@@ -222,7 +223,7 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     }
 
     device_cfg->client_key_pem = (char *)device_private_key_obj->valuestring;
-    mqtt_cfg->client_key_pem = (char *)device_cfg->client_key_pem;
+    mqtt_cfg->credentials.authentication.key = (char *)device_cfg->client_key_pem;
 
     free(device_config_data);
 
@@ -620,11 +621,19 @@ bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_stri
 
 bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name)
 {
-    static int function_handler_index = 0;
-
     if (function_handler_index >= BYTEBEAM_NUMBER_OF_ACTIONS) {
         ESP_LOGE(TAG, "Creation of new action handler failed");
         return BB_FAILURE;
+    }
+
+    int action_iterator = 0;
+
+    // checking for duplicates in the array, if there log the info about it and return 
+    for (action_iterator = 0; action_iterator < function_handler_index; action_iterator++) {
+        if (!strcmp(bytebeam_client->action_funcs[action_iterator].name, func_name)) {
+            ESP_LOGE(TAG, "action : %s is already there, update the action instead\n", func_name);
+            return BB_FAILURE;
+        }
     }
 
     bytebeam_client->action_funcs[function_handler_index].func = func_ptr;
@@ -635,12 +644,76 @@ bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, i
     return BB_SUCCESS;
 }
 
-void bytebeam_init_action_handler_array(bytebeam_action_functions_map_t *action_handler_array)
+bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client, char *func_name)
 {
-    int loop_var = 0;
+    int action_iterator = 0;
+    int target_action_index = -1;
 
-    for (loop_var = 0; loop_var < BYTEBEAM_NUMBER_OF_ACTIONS; loop_var++) {
-        action_handler_array[loop_var].func = NULL;
-        action_handler_array[loop_var].name = NULL;
+    for (action_iterator = 0; action_iterator < function_handler_index; action_iterator++) {
+        if (!strcmp(bytebeam_client->action_funcs[action_iterator].name, func_name)) {
+            target_action_index = action_iterator;
+        }
     }
+
+    if (target_action_index == -1) {
+        ESP_LOGE(TAG, "action : %s not found \n", func_name);
+        return BB_FAILURE;
+    } else {
+        for(action_iterator = target_action_index; action_iterator < function_handler_index - 1; action_iterator++) {
+            bytebeam_client->action_funcs[action_iterator].func = bytebeam_client->action_funcs[action_iterator+1].func;
+            bytebeam_client->action_funcs[action_iterator].name = bytebeam_client->action_funcs[action_iterator+1].name;
+        }
+
+        function_handler_index = function_handler_index - 1;
+        bytebeam_client->action_funcs[function_handler_index].func = NULL;
+        bytebeam_client->action_funcs[function_handler_index].name = NULL;
+        return BB_SUCCESS;
+    }
+}
+
+bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client, int (*new_func_ptr)(bytebeam_client_t *, char *, char *), char *func_name)
+{
+    int action_iterator = 0;
+    int target_action_index = -1;
+
+    for (action_iterator = 0; action_iterator < function_handler_index; action_iterator++) {
+        if (!strcmp(bytebeam_client->action_funcs[action_iterator].name, func_name)) {
+            target_action_index = action_iterator;
+        }
+    }
+
+    if (target_action_index == -1) {
+        ESP_LOGE(TAG, "action : %s not found \n", func_name);
+        return BB_FAILURE;
+    } else {
+        bytebeam_client->action_funcs[target_action_index].func = new_func_ptr;
+        return BB_SUCCESS;
+    }
+}
+
+void bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client)
+{
+    int action_iterator = 0;
+
+    ESP_LOGI(TAG, "[");
+    for (action_iterator = 0; action_iterator < BYTEBEAM_NUMBER_OF_ACTIONS; action_iterator++) {
+        if (bytebeam_client->action_funcs[action_iterator].name != NULL) {
+            ESP_LOGI(TAG, "       {%s : %s}       \n", bytebeam_client->action_funcs[action_iterator].name, "*******");
+        } else {
+            ESP_LOGI(TAG, "       {%s : %s}       \n", "NULL", "NULL");
+        }
+    }
+    ESP_LOGI(TAG, "]");
+}
+
+void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client)
+{
+    int action_iterator = 0;
+
+    for (action_iterator = 0; action_iterator < BYTEBEAM_NUMBER_OF_ACTIONS; action_iterator++) {
+        bytebeam_client->action_funcs[action_iterator].func = NULL;
+        bytebeam_client->action_funcs[action_iterator].name = NULL;
+    }
+
+    function_handler_index = 0;
 }
