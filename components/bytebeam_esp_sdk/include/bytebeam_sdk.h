@@ -8,8 +8,9 @@
 
 #include "mqtt_client.h"
 
-/*This macro is used to debug the sdk, we will keep all the unnecessary print under this macro*/
-#define DEBUG_BYTEBEAM_SDK false
+/*This macro is used to specify the underline esp idf sdk version to be used*/
+#define BYTEBEAM_ESP_IDF_VERSION_5_0
+// #define BYTEBEAM_ESP_IDF_VERSION_4_4_3
 
 /*This macro is used to specify the maximum length of bytebeam broker url string*/
 #define BYTEBEAM_BROKER_URL_STR_LEN 100

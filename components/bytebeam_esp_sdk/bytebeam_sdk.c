@@ -167,9 +167,15 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
         return -1;
     }
 
+#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
     mqtt_cfg->broker.address.uri = device_cfg->broker_uri;
-
     ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->broker.address.uri);
+#endif
+
+#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+    mqtt_cfg->uri = device_cfg->broker_uri;
+    ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
+#endif
 
     cJSON *device_id_obj = cJSON_GetObjectItem(cert_json, "device_id");
 
@@ -210,7 +216,14 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     }
 
     device_cfg->ca_cert_pem = (char *)ca_cert_obj->valuestring;
+
+#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
     mqtt_cfg->broker.verification.certificate = (const char *)device_cfg->ca_cert_pem;
+#endif
+
+#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+    mqtt_cfg->cert_pem = (const char *)device_cfg->ca_cert_pem;
+#endif
 
     cJSON *device_cert_obj = cJSON_GetObjectItem(auth_obj, "device_certificate");
 
@@ -222,7 +235,14 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     }
 
     device_cfg->client_cert_pem = (char *)device_cert_obj->valuestring;
+
+#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
     mqtt_cfg->credentials.authentication.certificate = (const char *)device_cfg->client_cert_pem;
+#endif
+
+#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+    mqtt_cfg->client_cert_pem = (const char *)device_cfg->client_cert_pem;
+#endif
 
     cJSON *device_private_key_obj = cJSON_GetObjectItem(auth_obj, "device_private_key");
 
@@ -234,7 +254,14 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     }
 
     device_cfg->client_key_pem = (char *)device_private_key_obj->valuestring;
+
+#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
     mqtt_cfg->credentials.authentication.key = (const char *)device_cfg->client_key_pem;
+#endif
+
+#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+    mqtt_cfg->client_key_pem = (const char *)device_cfg->client_key_pem;
+#endif
 
     free(device_config_data);
 
@@ -247,9 +274,7 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
      * bytebeam client is not running then we don't have any memory leaks (mostly solving pointer issues) :)
      */
 
-#if DEBUG_BYTEBEAM_SDK
-    ESP_LOGI(TAG, "Cleaning Up Bytebeam SDK");
-#endif
+    ESP_LOGD(TAG, "Cleaning Up Bytebeam SDK");
 
     // clearing bytebeam device configuration
     bytebeam_client->device_cfg.ca_cert_pem = NULL;
@@ -284,14 +309,10 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
     if(cert_json != NULL) {
         cJSON_Delete(cert_json);
         cert_json = NULL;
-    #if DEBUG_BYTEBEAM_SDK
-        ESP_LOGI(TAG, "Certificate JSON object deleted");
-    #endif
+        ESP_LOGD(TAG, "Certificate JSON object deleted");
     }
 
-#if DEBUG_BYTEBEAM_SDK
-    ESP_LOGI(TAG, "Bytebeam SDK Cleanup done !!");
-#endif
+    ESP_LOGD(TAG, "Bytebeam SDK Cleanup done !!");
 }
 
 int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client)
@@ -309,9 +330,7 @@ int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_
         return -1;
     }
 
-#if DEBUG_BYTEBEAM_SDK
-    ESP_LOGI(TAG, "Subscribe Topic is %s", topic);
-#endif
+    ESP_LOGD(TAG, "Subscribe Topic is %s", topic);
 
     msg_id = bytebeam_hal_mqtt_subscribe(client, topic, qos);
 
@@ -332,9 +351,7 @@ int bytebeam_unsubscribe_to_actions(bytebeam_device_config_t device_cfg, bytebea
         return -1;
     }
 
-#if DEBUG_BYTEBEAM_SDK
-    ESP_LOGI(TAG, "Unsubscribe Topic is %s", topic);
-#endif
+    ESP_LOGD(TAG, "Unsubscribe Topic is %s", topic);
 
     /* Commenting call to hal unsubscribe api as cloud seems to be not supporting unsubscribe feature, will test it
      * once cloud supports unsubscribe feature, most probably it will work.
@@ -757,9 +774,7 @@ int publish_action_status(bytebeam_device_config_t device_cfg,
         return -1;
     } 
 
-#if DEBUG_BYTEBEAM_SDK
-    ESP_LOGI(TAG, "\nTrying to print:\n%s\n", string_json);
-#endif
+    ESP_LOGD(TAG, "\nTrying to print:\n%s\n", string_json);
 
     int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
     int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/action/status", device_cfg.project_id, device_cfg.device_id);
@@ -1152,9 +1167,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
         return BB_FAILURE;
     } 
 
-#if DEBUG_BYTEBEAM_SDK
-    ESP_LOGI(TAG, "\n Log to Send :\n%s\n", log_string_json);
-#endif
+    ESP_LOGD(TAG, "\n Log to Send :\n%s\n", log_string_json);
 
     int ret_val = bytebeam_publish_to_stream(bytebeam_log_client, "Logs", log_string_json);
 

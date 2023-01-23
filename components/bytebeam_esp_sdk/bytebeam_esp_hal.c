@@ -75,7 +75,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
         if (update_progress_percent == loop_var) {
             if (loop_var == 100) {
-                if ((publish_action_status(temp_device_config, ota_action_id, update_progress_percent, mqtt_client_handle, "Complete", "Success")) != 0) {
+                if ((publish_action_status(temp_device_config, ota_action_id, update_progress_percent, mqtt_client_handle, "Completed", "Success")) != 0) {
                     ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA progress status");
                 }
             } else {
@@ -103,9 +103,11 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_DISCONNECTED");
         break;
 	
-	case HTTP_EVENT_REDIRECT:
-	    ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_REDIRECT");
+#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
+    case HTTP_EVENT_REDIRECT:
+        ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_REDIRECT");
         break;
+#endif
     }
 
     return ESP_OK;
@@ -149,9 +151,12 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
         .event_handler = _test_event_handler,
     };
 
+#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
 	esp_https_ota_config_t ota_config = {
         .http_config = &config,
     };
+#endif
+
     ota_img_data_len = 0;
 
     esp_http_client_handle_t client = esp_http_client_init(&test_config);
@@ -166,9 +171,17 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
     esp_http_client_cleanup(client);
     ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "The URL is:%s", config.url);
 
+#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
     if ((esp_https_ota(&ota_config)) != ESP_OK) {
         return -1;
     }
+#endif
+
+#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+    if ((esp_https_ota(&config)) != ESP_OK) {
+        return -1;
+    }
+#endif
 
     return 0;
 }
