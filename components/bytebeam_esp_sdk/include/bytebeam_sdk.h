@@ -8,8 +8,60 @@
 
 #include "mqtt_client.h"
 
+/*This macro is used to specify the underline esp idf sdk version to be used*/
+#define BYTEBEAM_ESP_IDF_VERSION_5_0
+// #define BYTEBEAM_ESP_IDF_VERSION_4_4_3
+
+/*This macro is used to specify the maximum length of bytebeam broker url string*/
+#define BYTEBEAM_BROKER_URL_STR_LEN 100
+
+/*This macro is used to specify the maximum length of bytebeam device id string*/
+#define BYTEBEAM_DEVICE_ID_STR_LEN 10
+
+/*This macro is used to specify the maximum length of bytebeam project id string*/
+#define BYTEBEAM_PROJECT_ID_STR_LEN 100
+
+/*This macro is used to specify the maximum length of bytebeam action id string*/
+#define BYTEBEAM_ACTION_ID_STR_LEN 20
+
+/*This macro is used to specify the maximum length of bytebeam OTA url string*/
+#define BYTEBAM_OTA_URL_STR_LEN 200
+
+/*This macro is used to specify the maximum length of bytebeam mqtt topic string*/
+#define BYTEBEAM_MQTT_TOPIC_STR_LEN 200
+
 /*This macro is used to specify the maximum number of actions that need to be handled for particular device*/
 #define BYTEBEAM_NUMBER_OF_ACTIONS 10
+
+/*This macro is used to specify the maximum log level that need to be handled for particular device*/
+#define BYTEBEAM_LOG_LEVEL BYTEBEAM_LOG_LEVEL_INFO
+
+#define BYTEBEAM_LOGX(ESP_LOGX, level, levelStr, tag, fmt, ...)                               \
+     do {                                                                                     \
+        if((level != BYTEBEAM_LOG_LEVEL_NONE) && (level <= bytebeam_log_level_get())) {       \
+            if (bytebeam_log_publish(levelStr, tag, fmt, ##__VA_ARGS__) == BB_FAILURE) {      \
+            ESP_LOGE(tag, "Failed To Publish Bytebeam Log !");                                \
+            } else {                                                                          \
+            ESP_LOGX(tag, fmt, ##__VA_ARGS__);                                                \
+            }                                                                                 \
+        }                                                                                     \
+    } while (0)
+
+#define BYTEBEAM_LOGE(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGE, BYTEBEAM_LOG_LEVEL_ERROR, "ERROR", tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGW(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGW, BYTEBEAM_LOG_LEVEL_WARN, "WARN", tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGI(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGI, BYTEBEAM_LOG_LEVEL_INFO, "INFO", tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGD(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGD, BYTEBEAM_LOG_LEVEL_DEBUG, "DEBUG", tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGV(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGV, BYTEBEAM_LOG_LEVEL_VERBOSE, "VERBOSE", tag, fmt, ##__VA_ARGS__)
+
+/* This enum represents Bytebeam Log Levels */
+typedef enum {
+    BYTEBEAM_LOG_LEVEL_NONE,
+    BYTEBEAM_LOG_LEVEL_ERROR,
+    BYTEBEAM_LOG_LEVEL_WARN,
+    BYTEBEAM_LOG_LEVEL_INFO,
+    BYTEBEAM_LOG_LEVEL_DEBUG,
+    BYTEBEAM_LOG_LEVEL_VERBOSE,
+} bytebeam_log_level_t;
 
 /**
  * @struct bytebeam_device_config_t
@@ -31,9 +83,9 @@ typedef struct bytebeam_device_config_t {
     char *ca_cert_pem;
     char *client_cert_pem;
     char *client_key_pem;
-    char broker_uri[100];
-    char device_id[10];
-    char project_id[100];
+    char broker_uri[BYTEBEAM_BROKER_URL_STR_LEN];
+    char device_id[BYTEBEAM_DEVICE_ID_STR_LEN];
+    char project_id[BYTEBEAM_PROJECT_ID_STR_LEN];
 } bytebeam_device_config_t;
 
 typedef esp_mqtt_client_handle_t bytebeam_client_handle_t;
@@ -88,10 +140,23 @@ typedef enum {
  * @param[in] bytebeam_client bytebeam client handle
  * 
  * @return
- *      BB_SUCCESS : Bytebeam Client successfully initialised
- *      BB_FAILURE : Bytebeam Client initialisation failed 
+ *      BB_SUCCESS : Bytebeam Client successfully initialized
+ *      BB_FAILURE : Bytebeam Client initialization failed
  */
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client);
+
+/**
+ * @brief Destroys bytebeam MQTT client after the client is initialized
+ *
+ * @note  Cannot be called from the action function handler
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ *
+ * @return
+ *      BB_SUCCESS : Bytebeam Client successfully destroyed
+ *      BB_FAILURE : Bytebeam Client destroy failed
+ */
+bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client);
 
 /**
  * @brief Publish response message after particular action is completed.
@@ -130,7 +195,18 @@ bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client
  */
 bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage);
 
-int bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload);
+/**
+ * @brief Publish message to particualar stream
+ *
+ * @param[in] bytebeam_client     bytebeam client handle
+ * @param[in] stream_name         name of the target stream
+ * @param[in] payload             message to publish
+ * 
+ * @return
+ *      BB_SUCCESS : Message publish successful
+ *      BB_FAILURE : Message publish failed
+ */
+bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload);
 
 /**
  * @brief Starts bytebeam MQTT client after client is initialised.
@@ -144,7 +220,24 @@ int bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_
 bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client);
 
 /**
+ * @brief Stops bytebeam MQTT client after client is started.
+ *
+ * @note  Cannot be called from the action function handler
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ *
+ * @return
+ *      BB_SUCCESS : Bytebeam Client stopped successfully
+ *      BB_FAILURE : Bytebeam Client stop failed
+ */
+bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client);
+
+/**
  * @brief Adds action handler for handling particular action.
+ *
+ * @note Arguments of the action handler function is generated dynamically inside the SDK and it will be freed after
+ *       executing the action handler function. So make sure you are not using it outside the scope of the action
+ *       handler function as this may cause memory leaks in your application.
  *
  * @param[in] bytebeam_client bytebeam client handle
  * @param[in] func_ptr        pointer to action handler function
@@ -215,4 +308,51 @@ void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client);
  */
 bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id);
 
-#endif
+/**
+ * @brief Set the bytebeam log client handle
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ * 
+ * @return
+ *      void
+ */
+void bytebeam_log_set_client(bytebeam_client_t *bytebeam_client);
+
+/**
+ * @brief Set the bytebeam log level
+ *
+ * @param[in] bytebeam_log_level_t log level
+ * 
+ * @return
+ *      void
+ */
+void bytebeam_log_level_set(bytebeam_log_level_t level);
+
+/**
+ * @brief Get the bytebeam log level
+ *
+ * @param
+ *      void
+ * 
+ * @return
+ *      bytebeam_log_level_t log level
+ */
+bytebeam_log_level_t bytebeam_log_level_get(void);
+
+/**
+ * @brief Publish Log to Bytebeam
+ *
+ * @note  This api works on bytebeam log client handle so make sure to set the bytebeam log handle
+ *        before calling this api, If called without setting it will return BB_BB_FAILURE
+ * 
+ * @param[in] level     indicates log level
+ * @param[in] tag       indicates log level
+ * @param[in] fmt       variable arguments
+ * 
+ * @return
+ *      BB_SUCCESS : Log publish successful
+ *      BB_FAILURE : Log publish failed
+ */
+bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const char *fmt, ...);
+
+#endif /* BYTEBEAM_SDK_H */
