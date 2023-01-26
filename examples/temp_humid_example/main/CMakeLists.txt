@@ -1,4 +1,4 @@
-idf_component_register(SRCS "app_main.c" 
+idf_component_register(SRCS "app_main.c" "sht/sht31.c"
                        PRIV_REQUIRES "bytebeam_esp_sdk"
                                      "nvs_flash"
                                      "app_update"
@@ -6,5 +6,8 @@ idf_component_register(SRCS "app_main.c"
                                      "protocol_examples_common"
                                      "esp_http_client"
                                      "esp_https_ota"
+                                     "esp_wifi"
+                                     "driver"
                                      "json"
-                       INCLUDE_DIRS ".")
+                       INCLUDE_DIRS "sht")
+

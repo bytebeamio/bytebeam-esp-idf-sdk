@@ -1,22 +1,9 @@
+#include "sht31.h"
 #include "esp_log.h"
-#include "driver/i2c.h"
 
-static i2c_port_t i2c_port = I2C_NUM_0;
-#define I2C_SDA 21
-#define I2C_SCL 22
-#define I2C_CLK_FREQ 100000
+i2c_port_t i2c_port = I2C_NUM_0;
 
-#define I2C_MASTER_TX_BUF_DISABLE 0 
-#define I2C_MASTER_RX_BUF_DISABLE 0
-#define WRITE_BIT I2C_MASTER_WRITE            
-#define READ_BIT I2C_MASTER_READ
-#define ACK_CHECK_EN 0x1
-#define ACK_CHECK_DIS 0x0
-#define ACK_VAL 0x0
-#define NACK_VAL 0x1
-
-
-static esp_err_t sht31_init(void)
+esp_err_t sht31_init(void)
 {
 
     i2c_config_t conf = {
@@ -35,7 +22,7 @@ static esp_err_t sht31_init(void)
     return i2c_driver_install(i2c_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
 }
 
-static uint8_t sht31_crc(uint8_t *data) {
+uint8_t sht31_crc(uint8_t *data) {
 
     uint8_t crc = 0xff;
     int i, j;
@@ -53,7 +40,7 @@ static uint8_t sht31_crc(uint8_t *data) {
     return crc;
 }
 
-static esp_err_t sht31_read_temp_humi(float *temp, float *humi)
+esp_err_t sht31_read_temp_humi(float *temp, float *humi)
 {
     unsigned char data_wr[] = {0x24, 0x00};
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -61,7 +48,7 @@ static esp_err_t sht31_read_temp_humi(float *temp, float *humi)
     i2c_master_write_byte(cmd, (0x44 << 1) | WRITE_BIT, ACK_CHECK_EN);
     i2c_master_write(cmd, data_wr, sizeof(data_wr), ACK_CHECK_EN);
     i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_RATE_MS);
+    esp_err_t ret = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_PERIOD_MS);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -79,7 +66,7 @@ static esp_err_t sht31_read_temp_humi(float *temp, float *humi)
     }
     i2c_master_read_byte(cmd, data_rd + size - 1, NACK_VAL);
     i2c_master_stop(cmd);
-    ret = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_RATE_MS);
+    ret = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_PERIOD_MS);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -94,3 +81,4 @@ static esp_err_t sht31_read_temp_humi(float *temp, float *humi)
 
     return ESP_OK;
 }
+

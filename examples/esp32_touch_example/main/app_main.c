@@ -39,40 +39,27 @@
 
 #include "driver/gpio.h"
 #include "driver/i2c.h"
+#include "driver/touch_pad.h"
 
 #include "bytebeam_sdk.h"
 
-#include "sht31.h"
 
-#define BLINK_GPIO 2
-
-
-
-static uint8_t led_state = 1;
-static int config_blink_period = 1000;
-static int toggle_led_cmd = 0;
-float temperature = 0.0;
-float humidity = 90;
+static int config_publish_period = 1000;
 
 bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_DEMO_EXAMPLE";
 
-static void blink_led(void)
-{
-    /* Set the GPIO level according to the state (LOW or HIGH)*/
-    gpio_set_level(BLINK_GPIO, led_state);
-}
+char stream_name[15] = "touch_stream";
 
-static void configure_led(void)
-{
-    gpio_reset_pin(BLINK_GPIO);
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
-}
 
-static void getSHTValues(){
-     if (sht31_read_temp_humi(&temperature, &humidity))
-            printf("SHT3x Sensor: %.2f °C, %.2f %%\n",temperature, humidity);
+uint16_t raw_touch_values()
+{
+    uint16_t touch_value;
+    for (int i = 0; i < TOUCH_PAD_MAX; i++) {
+        touch_pad_read(i, &touch_value);
+    }
+    return touch_value;
 }
 
 static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
@@ -84,12 +71,9 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
     cJSON *sequence_json = NULL;
     cJSON *timestamp_json = NULL;
     cJSON *device_status_json = NULL;
-    cJSON *temperature_json = NULL;
-    cJSON *humid_json = NULL;
-
+    cJSON *touch_json = NULL;
     char *string_json = NULL;
 
-    getSHTValues();
 
     device_shadow_json_list = cJSON_CreateArray();
 
@@ -130,13 +114,10 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     cJSON_AddItemToObject(device_shadow_json, "sequence", sequence_json);
 
-    char temp_buff[200];
+    char temp_buff[50] = "ESP32 Touch Example";
     int max_len = 200;
 
-    int temp_var = snprintf(temp_buff, max_len, "LED is %s!", led_state == true ? "ON" : "OFF");
-
-    if(temp_var > max_len)
-    {
+    if (strlen(temp_buff) > max_len) {
         ESP_LOGE(TAG, "device status string size exceeded max length of buffer");
     }
 
@@ -150,34 +131,25 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     cJSON_AddItemToObject(device_shadow_json, "Status", device_status_json);
 
+    //get touch values
+    uint16_t touch_value = raw_touch_values();
 
-    temperature_json = cJSON_CreateNumber(temperature);
+    touch_json = cJSON_CreateNumber(touch_value);
 
-    if (temperature_json == NULL) {
+    if (touch_json == NULL) {
         ESP_LOGE(TAG, "Json add time stamp failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
-    
-    cJSON_AddItemToObject(device_shadow_json, "temperature", temperature_json);
 
-    
-    humid_json = cJSON_CreateNumber(humidity);
-
-    if (humid_json == NULL) {
-        ESP_LOGE(TAG, "Json add time stamp failed.");
-        cJSON_Delete(device_shadow_json_list);
-        return -1;
-    }
-    
-    cJSON_AddItemToObject(device_shadow_json, "humidity", humid_json);
+    cJSON_AddItemToObject(device_shadow_json, "touch", touch_json);
 
     cJSON_AddItemToArray(device_shadow_json_list, device_shadow_json);
 
     string_json = cJSON_Print(device_shadow_json_list);
     ESP_LOGI(TAG, "\nStatus to send:\n%s\n", string_json);
 
-    bytebeam_publish_to_stream(bytebeam_client, "device_shadow", string_json);
+    bytebeam_publish_to_stream(bytebeam_client, stream_name, string_json);
 
     cJSON_Delete(device_shadow_json_list);
     free(string_json);
@@ -196,16 +168,7 @@ static void app_start(bytebeam_client_t *bytebeam_client)
             ESP_LOGE(TAG, "Publish to device shadow failed");
         }
 
-        if (toggle_led_cmd == 1) {
-            /* Toggle the LED state */
-            led_state = !led_state;
-            ESP_LOGI(TAG, " LED_%s!", led_state == true ? "ON" : "OFF");
-
-            blink_led();
-            toggle_led_cmd = 0;
-        }
-
-        vTaskDelay(config_blink_period / portTICK_PERIOD_MS);
+        vTaskDelay(config_publish_period / portTICK_PERIOD_MS);
     }
 }
 
@@ -248,22 +211,19 @@ static void sync_time_from_ntp(void)
     localtime_r(&now, &timeinfo);
 }
 
-int toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
-{
-    toggle_led_cmd = 1;
 
-    if ((bytebeam_publish_action_completed(bytebeam_client, action_id)) != 0) {
-        ESP_LOGE(TAG, "Failed to Publish action response for Toggle LED action");
-		return -1;
+static void esp_touch_init(void)
+{   touch_pad_init();
+    touch_pad_set_voltage(TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_1V);
+    for (int i = 0; i < TOUCH_PAD_MAX; i++) {
+        touch_pad_config(i, 0);
     }
-
-    return 0;
 }
 
 void app_main(void)
 {
     ESP_LOGI(TAG, "[APP] Startup..");
-    ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
+    ESP_LOGI(TAG, "[APP] Free memory: %d bytes",(int)esp_get_free_heap_size());
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
 
     esp_log_level_set("*", ESP_LOG_INFO);
@@ -281,20 +241,9 @@ void app_main(void)
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
-
     sync_time_from_ntp();
-    configure_led();
-    if (sht31_init())
-    {
-        printf("Initialised SHT31");
-    }
-    else
-        printf("Could not initialize SHT3x sensor\n");
-
-
+    esp_touch_init();
     bytebeam_init(&bytebeam_client);
-    bytebeam_add_action_handler(&bytebeam_client, handle_ota, "update_firmware");
-    bytebeam_add_action_handler(&bytebeam_client, toggle_led, "toggle_board_led");
     bytebeam_start(&bytebeam_client);
 
     app_start(&bytebeam_client);
