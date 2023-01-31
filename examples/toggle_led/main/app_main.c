@@ -36,9 +36,9 @@ static uint8_t led_state = 0;
 static int config_toggle_period = 1000;
 static int toggle_led_cmd = 0;
 
-char led_status[200];
+static char led_status[200] = "";
 
-bytebeam_client_t bytebeam_client;
+static bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_TOGGLE_LED_EXAMPLE";
 

@@ -45,9 +45,9 @@ static uint32_t led_duty_cycle = 0;
 static int config_update_period = 1000;
 static int update_config_cmd = 0;
 
-char led_status[200];
+static char led_status[200] = "";
 
-bytebeam_client_t bytebeam_client;
+static bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_UPDATE_CONFIG_EXAMPLE";
 
