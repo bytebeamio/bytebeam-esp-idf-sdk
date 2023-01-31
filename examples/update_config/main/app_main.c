@@ -30,6 +30,12 @@
 #include "driver/ledc.h"
 #include "bytebeam_sdk.h"
 
+// this macro is used to specify the delay for 1 sec.
+#define APP_DELAY_ONE_SEC 1000u
+
+// this macro is used to specify the maximum length of led status string
+#define LED_STATUS_STR_LEN 200
+
 // this macro is used to specify the gpio led for update config action
 #define UPDATE_GPIO 2
 
@@ -41,19 +47,21 @@
 #define LEDC_FREQUENCY          (5000)                  // frequency in hz Set frequency at 5 kHz
 #define LEDC_STEP_SIZE          255                     // set the step size with 8 bits resolution
 
+static int config_update_period = APP_DELAY_ONE_SEC;
+
 static uint32_t led_duty_cycle = 0;
-static int config_update_period = 1000;
 static int update_config_cmd = 0;
 
-static char led_status[200] = "";
+static char led_status[LED_STATUS_STR_LEN] = "";
+static char device_shadow_stream[] = "device_shadow";
 
 static bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_UPDATE_CONFIG_EXAMPLE";
 
-static void set_update_led_status(void) 
+static void set_led_status(void)
 {
-    int max_len = 200;
+    int max_len = LED_STATUS_STR_LEN;
     uint32_t ledc_res = (uint32_t)round(pow(2,LEDC_DUTY_RES)) - 1;
     float brightness = (led_duty_cycle/(float)ledc_res) * 100;
 
@@ -61,7 +69,7 @@ static void set_update_led_status(void)
 
     if(temp_var >= max_len)
     {
-        ESP_LOGE(TAG, "update LED device status string size exceeded max length of buffer");
+        ESP_LOGE(TAG, "led status string size exceeded max length of buffer");
     }
 }
 
@@ -191,7 +199,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
     ESP_LOGI(TAG, "\nStatus to send:\n%s\n", string_json);
 
     // publish the json to device shadow stream
-    int ret_val = bytebeam_publish_to_stream(bytebeam_client, "device_shadow", string_json);
+    int ret_val = bytebeam_publish_to_stream(bytebeam_client, device_shadow_stream, string_json);
 
     cJSON_Delete(device_shadow_json_list);
     cJSON_free(string_json);
@@ -210,8 +218,8 @@ static void app_start(bytebeam_client_t *bytebeam_client)
             // update the led
             update_led();
             
-            // set update led status
-            set_update_led_status();
+            // set led status
+            set_led_status();
 
             // pulish led status to device shadow
             ret_val = publish_device_shadow(bytebeam_client);
