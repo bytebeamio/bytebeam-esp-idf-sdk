@@ -29,20 +29,20 @@
 #include "driver/gpio.h"
 #include "bytebeam_sdk.h"
 
-/*This macro is used to specify the GPIO LED for toggle_board_led action*/
-#define BLINK_GPIO 2
+// this macro is used to specify the gpio led for toggle led action
+#define TOGGLE_GPIO 2
 
 static uint8_t led_state = 0;
-static int config_blink_period = 1000;
+static int config_toggle_period = 1000;
 static int toggle_led_cmd = 0;
 
 char led_status[200];
 
 bytebeam_client_t bytebeam_client;
 
-static const char *TAG = "BYTEBEAM_DEMO_EXAMPLE";
+static const char *TAG = "BYTEBEAM_TOGGLE_LED_EXAMPLE";
 
-static void set_toggle_led_status()
+static void set_toggle_led_status(void)
 {
     int max_len = 200;
     int temp_var = snprintf(led_status, max_len, "LED is %s !", led_state == true ? "ON" : "OFF");
@@ -55,19 +55,19 @@ static void set_toggle_led_status()
 
 static void toggle_led(void)
 {
-    // toggle the led state
+    // toggle the gpio led state
     led_state = !led_state;
     ESP_LOGI(TAG, " LED_%s!", led_state == true ? "ON" : "OFF");
 
-    // set the gpio level according to the state (low or high)
-    gpio_set_level(BLINK_GPIO, led_state);
+    // set the gpio led level according to the state (low or high)
+    gpio_set_level(TOGGLE_GPIO, led_state);
 }
 
 static void configure_led(void)
 {
-    // Set the blink gpio pin as output
-    gpio_reset_pin(BLINK_GPIO);
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+    // set the gpio led pin as output
+    gpio_reset_pin(TOGGLE_GPIO);
+    gpio_set_direction(TOGGLE_GPIO, GPIO_MODE_OUTPUT);
 }
 
 static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
@@ -86,7 +86,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     device_shadow_json_list = cJSON_CreateArray();
 
-    if(device_shadow_json_list == NULL) 
+    if(device_shadow_json_list == NULL)
     {
         ESP_LOGE(TAG, "Json Init failed.");
         return -1;
@@ -94,7 +94,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     device_shadow_json = cJSON_CreateObject();
 
-    if(device_shadow_json == NULL) 
+    if(device_shadow_json == NULL)
     {
         ESP_LOGE(TAG, "Json add failed.");
         cJSON_Delete(device_shadow_json_list);
@@ -115,7 +115,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     timestamp_json = cJSON_CreateNumber(milliseconds);
 
-    if(timestamp_json == NULL) 
+    if(timestamp_json == NULL)
     {
         ESP_LOGE(TAG, "Json add time stamp failed.");
         cJSON_Delete(device_shadow_json_list);
@@ -127,7 +127,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
     sequence++;
     sequence_json = cJSON_CreateNumber(sequence);
 
-    if(sequence_json == NULL) 
+    if(sequence_json == NULL)
     {
         ESP_LOGE(TAG, "Json add sequence id failed.");
         cJSON_Delete(device_shadow_json_list);
@@ -138,7 +138,8 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     device_status_json = cJSON_CreateString(led_status);
 
-    if(device_status_json == NULL) {
+    if(device_status_json == NULL)
+    {
         ESP_LOGE(TAG, "Json add device status failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
@@ -194,7 +195,7 @@ static void app_start(bytebeam_client_t *bytebeam_client)
             toggle_led_cmd = 0;
         }
 
-        vTaskDelay(config_blink_period / portTICK_PERIOD_MS);
+        vTaskDelay(config_toggle_period / portTICK_PERIOD_MS);
     }
 }
 
@@ -238,7 +239,7 @@ static void sync_time_from_ntp(void)
     localtime_r(&now, &timeinfo);
 }
 
-// handler for toggle board led action
+// handler for toggle led action
 int handle_toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
 {
     int ret_val = 0;
@@ -252,7 +253,7 @@ int handle_toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *acti
     if(ret_val != 0) 
     {
         ESP_LOGE(TAG, "Failed to Publish action completed response for Toggle LED action");
-		return -1;
+        return -1;
     }
 
     return 0;
@@ -280,14 +281,17 @@ void app_main(void)
      */
     ESP_ERROR_CHECK(example_connect());
 
+    // sync time from the ntp
     sync_time_from_ntp();
+
+    // configure the gpio led
     configure_led();
 
     // initialize the bytebeam client
     bytebeam_init(&bytebeam_client);
 
-    // add the handler toggle board led action 
-    bytebeam_add_action_handler(&bytebeam_client, handle_toggle_led, "toggle_board_led");
+    // add the handler for toggle led action
+    bytebeam_add_action_handler(&bytebeam_client, handle_toggle_led, "toggle_led");
 
     // start the bytebeam client
     bytebeam_start(&bytebeam_client);
