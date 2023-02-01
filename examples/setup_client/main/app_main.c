@@ -30,16 +30,11 @@
 // this macro is used to specify the delay for 5 sec.
 #define APP_DELAY_FIVE_SEC 5000u
 
-// this macro is used to specify the firmware version
-#define APP_FIRMWARE_VERSION "1.0.0"
-
 static int config_delay_period = APP_DELAY_FIVE_SEC;
-
-static const char *fw_version = APP_FIRMWARE_VERSION;
 
 static bytebeam_client_t bytebeam_client;
 
-static const char *TAG = "BYTEBEAM_BASIC_OTA_EXAMPLE";
+static const char *TAG = "BYTEBEAM_SETUP_CLIENT_EXAMPLE";
 
 static void app_start(bytebeam_client_t *bytebeam_client)
 {
@@ -127,19 +122,18 @@ void app_main(void)
     // initialize the bytebeam client
     bytebeam_init(&bytebeam_client);
 
-    // add the handler for update firmware action i.e handling ota is internal to the sdk
-    bytebeam_add_action_handler(&bytebeam_client, handle_ota, "update_firmware");
-
-    /* Use the bytebeam_remove_action_handler api to remove the handler for the update firmware action at any point of time
-     * in the code , Also you can  mantain the add update firmware action handler and remove update firmware action handler
-     * flow as per you application needs.
-     */
-    // bytebeam_remove_action_handler(&bytebeam_client, "update_firmware");
-
     // start the bytebeam client
     bytebeam_start(&bytebeam_client);
-    
-    ESP_LOGI(TAG, "Application Firmware Version : %s", fw_version);
+
+    /* Use the bytebeam_stop api to stop the bytebeam client at any point of time in the code, Also you
+     * can mantain the bytebeam client start and bytebeam client stop flow as per you application needs
+     */
+    // bytebeam_stop(&bytebeam_client);
+
+    /* Use the bytebeam_destroy api to destroy the bytebeam client at any point of time in the code, Also
+     * you can mantain the bytebeam cient init and bytebeam client destroy flow as per you application needs
+     */
+    // bytebeam_destroy(&bytebeam_client);
 
     //
     // start the main application
