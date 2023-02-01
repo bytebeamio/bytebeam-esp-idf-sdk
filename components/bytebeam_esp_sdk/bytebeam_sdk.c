@@ -972,6 +972,26 @@ bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client
     }
 }
 
+bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_client, char *func_name)
+{
+    int action_iterator = 0;
+    int target_action_index = -1;
+
+    for (action_iterator = 0; action_iterator < function_handler_index; action_iterator++) {
+        if (!strcmp(bytebeam_client->action_funcs[action_iterator].name, func_name)) {
+            target_action_index = action_iterator;
+        }
+    }
+
+    if (target_action_index == -1) {
+        ESP_LOGE(TAG, "action : %s not found \n", func_name);
+        return BB_FAILURE;
+    } else {
+        ESP_LOGI(TAG, "action : %s found at index %d\n", func_name, target_action_index);
+        return BB_SUCCESS;
+    }
+}
+
 void bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client)
 {
     int action_iterator = 0;

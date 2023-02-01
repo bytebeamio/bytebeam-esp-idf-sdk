@@ -40,9 +40,9 @@
      do {                                                                                     \
         if((level != BYTEBEAM_LOG_LEVEL_NONE) && (level <= bytebeam_log_level_get())) {       \
             if (bytebeam_log_publish(levelStr, tag, fmt, ##__VA_ARGS__) == BB_FAILURE) {      \
-            ESP_LOGE(tag, "Failed To Publish Bytebeam Log !");                                \
+                ESP_LOGE(tag, "Failed To Publish Bytebeam Log !");                            \
             } else {                                                                          \
-            ESP_LOGX(tag, fmt, ##__VA_ARGS__);                                                \
+                ESP_LOGX(tag, fmt, ##__VA_ARGS__);                                            \
             }                                                                                 \
         }                                                                                     \
     } while (0)
@@ -274,6 +274,18 @@ bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client
  *      BB_FAILURE : Failure in updating action handler 
  */
 bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client, int (*new_func_ptr)(bytebeam_client_t *, char *, char *), char *func_name);
+
+/**
+ * @brief Check if action handler exists.
+ *
+ * @param[in] bytebeam_client bytebeam client handle
+ * @param[in] func_name       action name
+ *
+ * @return
+ *      BB_SUCCESS : If Action handler Exists
+ *      BB_FAILURE : Action handler didn't exists
+ */
+bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_client, char *func_name);
 
 /**
  * @brief print action handler array.
