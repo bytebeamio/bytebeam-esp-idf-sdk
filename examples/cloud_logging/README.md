@@ -1,5 +1,5 @@
-# Bytebeam Setup Client Example
-This example will show you how to setup the client for Bytebeam IoT Platform.
+# Bytebeam Cloud Logging Example
+This example will show you how to log the useful information to Bytebeam IoT Platform.
 
 ## Hardware specification
 1. ESP32 Dev Board
