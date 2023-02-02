@@ -27,13 +27,13 @@
 
 #include "bytebeam_sdk.h"
 
-// this macro is used to specify the delay for 5 sec.
-#define APP_DELAY_FIVE_SEC 5000u
+// this macro is used to specify the delay for 10 sec.
+#define APP_DELAY_TEN_SEC 10000u
 
 // this macro is used to specify the firmware version
 #define APP_FIRMWARE_VERSION "1.0.0"
 
-static int config_delay_period = APP_DELAY_FIVE_SEC;
+static int config_delay_period = APP_DELAY_TEN_SEC;
 
 static const char *fw_version = APP_FIRMWARE_VERSION;
 

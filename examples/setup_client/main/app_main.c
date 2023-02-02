@@ -27,10 +27,10 @@
 
 #include "bytebeam_sdk.h"
 
-// this macro is used to specify the delay for 5 sec.
-#define APP_DELAY_FIVE_SEC 5000u
+// this macro is used to specify the delay for 10 sec.
+#define APP_DELAY_TEN_SEC 10000u
 
-static int config_delay_period = APP_DELAY_FIVE_SEC;
+static int config_delay_period = APP_DELAY_TEN_SEC;
 
 static bytebeam_client_t bytebeam_client;
 

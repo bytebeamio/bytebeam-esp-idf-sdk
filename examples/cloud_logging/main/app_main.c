@@ -34,7 +34,38 @@ static int config_delay_period = APP_DELAY_TEN_SEC;
 
 static bytebeam_client_t bytebeam_client;
 
-static const char *TAG = "BYTEBEAM_SETUP_CLIENT_EXAMPLE";
+static const char *TAG = "BYTEBEAM_CLOUD_LOGGING_EXAMPLE";
+
+static void bytebeam_cloud_logging_test(void) 
+{
+    /* default bytebeam log level is BYTEBEAM_LOG_LEVEL_INFO, so logs beyond info level will not work :) 
+     * You can always change the log setting at the compile time or run time
+     */
+    BYTEBEAM_LOGE(TAG, "I am %s Log", "Error");
+    BYTEBEAM_LOGW(TAG, "I am %s Log", "Warn");
+    BYTEBEAM_LOGI(TAG, "I am %s Log", "Info");
+    BYTEBEAM_LOGD(TAG, "I am %s Log", "Debug");                   // debug Log will not appear to cloud
+    BYTEBEAM_LOGV(TAG, "I am %s Log", "Verbose");                 // verbose Log will not appear to cloud
+
+    // changing log level to Verbose for showing use case   
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_VERBOSE); 
+
+    /* now bytebeam log level is BYTEBEAM_LOG_LEVEL_VERBOSE, so every logs should work now :)
+     * make sure your esp log level supports Verbose to see the log in the terminal
+     */
+    BYTEBEAM_LOGE(TAG, "This is %s Log", "Error");
+    BYTEBEAM_LOGW(TAG, "This is %s Log", "Warn");
+    BYTEBEAM_LOGI(TAG, "This is %s Log", "Info");
+    BYTEBEAM_LOGD(TAG, "This is %s Log", "Debug");                // debug Log should appear to cloud
+    BYTEBEAM_LOGV(TAG, "This is %s Log", "Verbose");              // verbose Log should appear to cloud
+
+    // changing log level back to Info for meeting initial conditions
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_INFO);
+
+    ESP_LOGI(TAG, "Bytebeam Log Test Executed Successfully !\n");
+}
 
 static void app_start(bytebeam_client_t *bytebeam_client)
 {
@@ -46,8 +77,9 @@ static void app_start(bytebeam_client_t *bytebeam_client)
 
         if(bytebeam_client->connection_status == 1)
         {
-            ESP_LOGI(TAG, "Status : Connected");
-            ESP_LOGI(TAG, "Project Id : %s, Device Id : %s", bytebeam_client->device_cfg.project_id, bytebeam_client->device_cfg.device_id);
+            // this is how you can do cloud logging, try other log levels for better understanding
+            BYTEBEAM_LOGI(TAG, "Status : Connected");
+            BYTEBEAM_LOGI(TAG, "Project Id : %s, Device Id : %s", bytebeam_client->device_cfg.project_id, bytebeam_client->device_cfg.device_id);
         }
 
         vTaskDelay(config_delay_period / portTICK_PERIOD_MS);
@@ -94,28 +126,6 @@ static void sync_time_from_ntp(void)
     localtime_r(&now, &timeinfo);
 }
 
-int hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id) 
-{
-    //
-    // nothing much to do here at the moment
-    //
-
-    ESP_LOGI(TAG, "Hello World !");
-
-    return 0;
-}
-
-int yet_another_hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id) 
-{
-    //
-    // nothing much to do here at the moment
-    //
-
-    ESP_LOGI(TAG, "Yet Another Hello World !");
-
-    return 0;
-}
-
 void app_main(void)
 {
     ESP_LOGI(TAG, "[APP] Startup..");
@@ -147,23 +157,10 @@ void app_main(void)
     // start the bytebeam client
     bytebeam_start(&bytebeam_client);
 
-    // add the handlerfor hello world action
-    bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_world");
-
-    // Use the bytebeam_is_action_handler_there api to check if particular action exists or not at any point of time in the code
-    // bytebeam_is_action_handler_there(&bytebeam_client, "hello_world");
-
-    // Use the bytebeam_update_action_handler api to update the particular action at any point of time in the code
-    // bytebeam_update_action_handler(&bytebeam_client, yet_another_hello_world, "hello_world");
-
-    // Use the bytebeam_print_action_handler_array api to print the action handler array at any point of time in the code
-    // bytebeam_print_action_handler_array(&bytebeam_client);
-
-    // Use the bytebeam_remove_action_handler api to remove the particular action at any point of time in the code
-    // bytebeam_remove_action_handler(&bytebeam_client, "hello_world");
-
-    // Use the bytebeam_reset_action_handler_array api to reset the action handler array at any point of time in the code
-    // bytebeam_reset_action_handler_array(&bytebeam_client);
+    /* bytebeam logs can be tested once bytebeam client is started successfully, Use bytebeam_cloud_logging_test to test
+     * the bytebeam log feature i.e this functions is not included in the sdk
+     */
+    // bytebeam_cloud_logging_test();
 
     //
     // start the main application

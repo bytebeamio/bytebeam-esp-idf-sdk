@@ -1,4 +1,4 @@
-# Bytebeam Toggle Board LED Example
+# Bytebeam Toggle LED Example
 This example will show you how to toggle the led with Bytebeam IoT Platform.
 
 ## Hardware specification
