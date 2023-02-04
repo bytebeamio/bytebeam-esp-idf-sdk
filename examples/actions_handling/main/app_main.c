@@ -94,7 +94,8 @@ static void sync_time_from_ntp(void)
     localtime_r(&now, &timeinfo);
 }
 
-int hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id) 
+// handler for hello world action
+int handle_hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
 {
     //
     // nothing much to do here at the moment
@@ -105,7 +106,8 @@ int hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
     return 0;
 }
 
-int yet_another_hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id) 
+// yet another handler for hello world action
+int handle_yet_another_hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
 {
     //
     // nothing much to do here at the moment
@@ -148,13 +150,13 @@ void app_main(void)
     bytebeam_start(&bytebeam_client);
 
     // add the handlerfor hello world action
-    bytebeam_add_action_handler(&bytebeam_client, hello_world, "hello_world");
+    bytebeam_add_action_handler(&bytebeam_client, handle_hello_world, "hello_world");
 
     // Use the bytebeam_is_action_handler_there api to check if particular action exists or not at any point of time in the code
     // bytebeam_is_action_handler_there(&bytebeam_client, "hello_world");
 
     // Use the bytebeam_update_action_handler api to update the particular action at any point of time in the code
-    // bytebeam_update_action_handler(&bytebeam_client, yet_another_hello_world, "hello_world");
+    // bytebeam_update_action_handler(&bytebeam_client, handle_yet_another_hello_world, "hello_world");
 
     // Use the bytebeam_print_action_handler_array api to print the action handler array at any point of time in the code
     // bytebeam_print_action_handler_array(&bytebeam_client);

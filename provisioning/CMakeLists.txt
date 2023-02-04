@@ -7,4 +7,4 @@ cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-project(provisioning_app)
+project(bytebeam_provisioning_example)

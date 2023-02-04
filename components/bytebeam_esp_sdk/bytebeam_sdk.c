@@ -24,7 +24,7 @@ static bytebeam_log_level_t bytebeam_log_level = BYTEBEAM_LOG_LEVEL_NONE;
 
 static const char *TAG = "BYTEBEAM_SDK";
 
-char *utils_read_file(char *filename)
+static char *utils_read_file(char *filename)
 {
     FILE *file;
 
@@ -32,6 +32,7 @@ char *utils_read_file(char *filename)
 
     if (file == NULL) 
     {
+        ESP_LOGE(TAG, "Fialed to open device config file for reading");
         return NULL;
     }
 
@@ -39,18 +40,26 @@ char *utils_read_file(char *filename)
     int file_length = ftell(file);
     fseek(file, 0, SEEK_SET);
 
+    if(file_length <= 0)
+    {
+        ESP_LOGE(TAG, "Fialed to get device config file size");
+        return NULL;
+    }
+
     // dynamically allocate a char array to store the file contents
     char *buff = malloc(sizeof(char) * (file_length + 1));
 
     if(buff == NULL)
     {
+        ESP_LOGE(TAG, "Fialed to allocate the memory for device config file");
         return NULL;
     }
 
     int temp_c;
     int loop_var = 0;
 
-    while ((temp_c = fgetc(file)) != EOF) {
+    while ((temp_c = fgetc(file)) != EOF)
+    {
         buff[loop_var] = temp_c;
         loop_var++;
     }
@@ -62,8 +71,9 @@ char *utils_read_file(char *filename)
     return buff;
 }
 
-int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_client_config_t *mqtt_cfg)
+static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_client_config_t *mqtt_cfg)
 {
+    esp_err_t ret_code = ESP_OK;
     char *config_fname = "/spiffs/device_config.json";
 
     esp_vfs_spiffs_conf_t conf = {
@@ -73,16 +83,19 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
         .format_if_mount_failed = true
     };
 
-    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+    ret_code = esp_vfs_spiffs_register(&conf);
 
-    if (ret != ESP_OK) 
+    if (ret_code != ESP_OK)
     {
-        if (ret == ESP_FAIL) 
+        if (ret_code == ESP_FAIL)
         {
             ESP_LOGE(TAG, "Failed to mount or format filesystem");
         } 
-        else if (ret == ESP_ERR_NOT_FOUND) {
+        else if (ret_code == ESP_ERR_NOT_FOUND) {
             ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+        }
+        else {
+            ESP_LOGE(TAG, "Failed to register SPIFFS partition");
         }
 
         return -1;
@@ -93,12 +106,24 @@ int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_clie
     if (device_config_data == NULL) {
         ESP_LOGE(TAG, "Error in fetching Config data from FLASH");
 
-        esp_vfs_spiffs_unregister(conf.partition_label);
+        ret_code = esp_vfs_spiffs_unregister(conf.partition_label);
+
+        if (ret_code != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Failed to unregister SPIFFS partition");
+        }
+
         free(device_config_data);
         return -1;
     }
 
-    esp_vfs_spiffs_unregister(conf.partition_label);
+    ret_code = esp_vfs_spiffs_unregister(conf.partition_label);
+
+    if (ret_code != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to unregister SPIFFS partition");
+        return -1;
+    }
 
     const char *json_file = (const char *)device_config_data;
 
