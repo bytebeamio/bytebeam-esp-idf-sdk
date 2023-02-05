@@ -6,18 +6,24 @@ Before you start, please make yourself familiar with the architecture of esp-byt
 
 ## Steps to Contribute
 
-### Getting the code
+### Getting the project
 
 Go to <https://github.com/bytebeamio/esp-bytebeam-sdk> and fork the project repository.
 
 ```bash
+# Open the terminal where you want to do the project setup
+$ cd path_to_project_setup
+
+# Remove the esp-bytebeam-sdk project if any
+$ rmdir /s /q esp-bytebeam-sdk
+
 # Clone your fork
 $ git clone git@github.com:<YOU>/esp-bytebeam-sdk.git
 
-# Enter the project directory
+# Step into project directory
 $ cd esp-bytebeam-sdk
 
-# Create a branch for your changes
+# Create a branch for your changes (say my_topical_branch)
 $ git checkout -b my_topical_branch
 ```
 
@@ -32,11 +38,14 @@ $ idf.py --version
 # Make sure the target is available in the current version of esp-idf
 $ idf.py --list-targets
 
+# Step into project directory if not there
+$ cd path_to_project_dir
+
 # Step into any example project (say toggle_led)
 $ cd examples/toggle_led
 
-# Set the target
-$ idf.py set-target esp-board
+# Set the target (say esp32)
+$ idf.py set-target esp32
 
 # Configure your project
 $ idf.py menuconfig
@@ -65,7 +74,7 @@ esp-bytebeam-sdk is licensed under the permissive [Apache License Version 2.0][l
 
 [license]: LICENSE
 [design]: docs/design.md
-[coc]: docs/CoC.md
+[coc]: CODE_OF_CONDUCT.md
 [esp-get-started]: https://docs.espressif.com/projects/esp-idf/en/v5.0/esp32/get-started/index.html
 [esp-build-system]: https://docs.espressif.com/projects/esp-idf/en/v5.0/esp32/api-guides/build-system.html
 [esp-code-style]: https://docs.espressif.com/projects/esp-idf/en/v5.0/esp32/contribute/style-guide.html
