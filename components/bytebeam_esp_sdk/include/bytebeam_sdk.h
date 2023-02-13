@@ -36,9 +36,10 @@
 /*This macro is used to specify the maximum log level that need to be handled for particular device*/
 #define BYTEBEAM_LOG_LEVEL BYTEBEAM_LOG_LEVEL_INFO
 
-#define BYTEBEAM_LOGX(ESP_LOGX, level, levelStr, tag, fmt, ...)                               \
+#define BYTEBEAM_LOGX(ESP_LOGX, level, tag, fmt, ...)                                         \
      do {                                                                                     \
-        if((level != BYTEBEAM_LOG_LEVEL_NONE) && (level <= bytebeam_log_level_get())) {       \
+        const char* levelStr = bytebeam_log_level_str[level];                                 \
+        if(level <= bytebeam_log_level_get()) {                                               \
             if (bytebeam_log_publish(levelStr, tag, fmt, ##__VA_ARGS__) == BB_FAILURE) {      \
                 ESP_LOGE(tag, "Failed To Publish Bytebeam Log !");                            \
             } else {                                                                          \
@@ -47,11 +48,11 @@
         }                                                                                     \
     } while (0)
 
-#define BYTEBEAM_LOGE(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGE, BYTEBEAM_LOG_LEVEL_ERROR, "ERROR", tag, fmt, ##__VA_ARGS__)
-#define BYTEBEAM_LOGW(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGW, BYTEBEAM_LOG_LEVEL_WARN, "WARN", tag, fmt, ##__VA_ARGS__)
-#define BYTEBEAM_LOGI(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGI, BYTEBEAM_LOG_LEVEL_INFO, "INFO", tag, fmt, ##__VA_ARGS__)
-#define BYTEBEAM_LOGD(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGD, BYTEBEAM_LOG_LEVEL_DEBUG, "DEBUG", tag, fmt, ##__VA_ARGS__)
-#define BYTEBEAM_LOGV(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGV, BYTEBEAM_LOG_LEVEL_VERBOSE, "VERBOSE", tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGE(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGE, BYTEBEAM_LOG_LEVEL_ERROR, tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGW(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGW, BYTEBEAM_LOG_LEVEL_WARN, tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGI(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGI, BYTEBEAM_LOG_LEVEL_INFO, tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGD(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGD, BYTEBEAM_LOG_LEVEL_DEBUG, tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGV(tag, fmt, ...)  BYTEBEAM_LOGX(ESP_LOGV, BYTEBEAM_LOG_LEVEL_VERBOSE, tag, fmt, ##__VA_ARGS__)
 
 /* This enum represents Bytebeam Log Levels */
 typedef enum {
@@ -62,6 +63,15 @@ typedef enum {
     BYTEBEAM_LOG_LEVEL_DEBUG,
     BYTEBEAM_LOG_LEVEL_VERBOSE,
 } bytebeam_log_level_t;
+
+static const char* bytebeam_log_level_str[6] = {
+    [BYTEBEAM_LOG_LEVEL_NONE]    = "None",
+    [BYTEBEAM_LOG_LEVEL_ERROR]   = "Error",
+    [BYTEBEAM_LOG_LEVEL_WARN]    = "Warn",
+    [BYTEBEAM_LOG_LEVEL_INFO]    = "Info",
+    [BYTEBEAM_LOG_LEVEL_DEBUG]   = "Debug",
+    [BYTEBEAM_LOG_LEVEL_VERBOSE] = "Verbose"
+};
 
 /**
  * @struct bytebeam_device_config_t
@@ -339,6 +349,40 @@ void bytebeam_log_set_client(bytebeam_client_t *bytebeam_client);
  *      void
  */
 void bytebeam_log_level_set(bytebeam_log_level_t level);
+
+/**
+ * @brief Enable the cloud logging
+ *
+ * @param
+ *      void
+ *
+ * @return
+ *      void
+ */
+void bytebeam_enable_cloud_logging();
+
+/**
+ * @brief Return the cloud logging status i.e Enabled or Disabled
+ *
+ * @param
+ *      void
+ *
+ * @return
+ *      True  : If cloud logging is enabled
+ *      False : Cloud logging is disabled
+ */
+bool bytebeam_is_cloud_logging_enabled();
+
+/**
+ * @brief Disable the cloud logging
+ *
+ * @param
+ *      void
+ *
+ * @return
+ *      void
+ */
+void bytebeam_disable_cloud_logging();
 
 /**
  * @brief Get the bytebeam log level

@@ -21,6 +21,7 @@ static int function_handler_index = 0;
 
 static bytebeam_client_t *bytebeam_log_client = NULL;
 static bytebeam_log_level_t bytebeam_log_level = BYTEBEAM_LOG_LEVEL_NONE;
+static bool is_cloud_logging_enable = true;
 
 static const char *TAG = "BYTEBEAM_SDK";
 
@@ -1054,6 +1055,21 @@ void bytebeam_log_level_set(bytebeam_log_level_t level)
     bytebeam_log_level = level;
 }
 
+void bytebeam_enable_cloud_logging()
+{
+    is_cloud_logging_enable = true;
+}
+
+bool bytebeam_is_cloud_logging_enabled()
+{
+    return is_cloud_logging_enable;
+}
+
+void bytebeam_disable_cloud_logging()
+{
+    is_cloud_logging_enable = false;
+}
+
 bytebeam_log_level_t bytebeam_log_level_get(void)
 {
     return bytebeam_log_level;
@@ -1077,6 +1093,11 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     {
         ESP_LOGE(TAG, "Bytebeam log client handle is not set");
         return BB_FAILURE;
+    }
+
+    // if cloud logging is disabled, we don't need to push just return :)
+    if(!is_cloud_logging_enable) {
+      return BB_SUCCESS;
     }
 
     va_list args;

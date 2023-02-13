@@ -157,6 +157,27 @@ void app_main(void)
     // start the bytebeam client
     bytebeam_start(&bytebeam_client);
 
+    // check if cloud logging is enabled or disabled for your device
+    bool cloud_logging_status = bytebeam_is_cloud_logging_enabled();
+
+    if(cloud_logging_status) {
+        ESP_LOGI(TAG, "Cloud Logging is Enabled.");
+    } else {
+        ESP_LOGI(TAG, "Cloud Logging is Disabled.");
+    }
+
+    // enable cloud logging for your device (default)
+    // bytebeam_enable_cloud_logging();
+
+    // disable cloud logging for your device
+    // bytebeam_disable_cloud_logging();
+
+    // get the bytebeam log level
+    // int current_log_level = bytebeam_log_level_get();
+
+    // set the bytebeam log level
+    // bytebeam_log_level_set(log_level_to_set);
+
     /* bytebeam logs can be tested once bytebeam client is started successfully, Use bytebeam_cloud_logging_test to test
      * the bytebeam log feature i.e this functions is not included in the sdk
      */
