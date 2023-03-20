@@ -172,6 +172,12 @@ void app_main(void)
     // disable cloud logging for your device
     // bytebeam_disable_cloud_logging();
 
+    // get the log stream name
+    // char* log_stream_name = bytebeam_log_stream_get();
+
+    // configure the log stream if needed, defaults to "logs"
+    // bytebeam_log_stream_set("device_logs");
+
     // get the bytebeam log level
     // int current_log_level = bytebeam_log_level_get();
 

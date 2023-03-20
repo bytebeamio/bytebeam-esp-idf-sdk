@@ -33,6 +33,9 @@
 /*This macro is used to specify the maximum number of actions that need to be handled for particular device*/
 #define BYTEBEAM_NUMBER_OF_ACTIONS 10
 
+/*This macro is used to specify the maximum length of bytebeam log stream string*/
+#define BYTEBEAM_LOG_STREAM_STR_LEN 20
+
 /*This macro is used to specify the maximum log level that need to be handled for particular device*/
 #define BYTEBEAM_LOG_LEVEL BYTEBEAM_LOG_LEVEL_INFO
 
@@ -338,17 +341,7 @@ bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_stri
  * @return
  *      void
  */
-void bytebeam_log_set_client(bytebeam_client_t *bytebeam_client);
-
-/**
- * @brief Set the bytebeam log level
- *
- * @param[in] bytebeam_log_level_t log level
- * 
- * @return
- *      void
- */
-void bytebeam_log_level_set(bytebeam_log_level_t level);
+void bytebeam_log_client_set(bytebeam_client_t *bytebeam_client);
 
 /**
  * @brief Enable the cloud logging
@@ -385,15 +378,46 @@ bool bytebeam_is_cloud_logging_enabled();
 void bytebeam_disable_cloud_logging();
 
 /**
+ * @brief Set the bytebeam log level
+ *
+ * @param[in] level log level
+ * 
+ * @return
+ *      void
+ */
+void bytebeam_log_level_set(bytebeam_log_level_t level);
+
+/**
  * @brief Get the bytebeam log level
  *
  * @param
  *      void
  * 
  * @return
- *      bytebeam_log_level_t log level
+ *      bytebeam log level
  */
 bytebeam_log_level_t bytebeam_log_level_get(void);
+
+/**
+ * @brief Set the bytebeam log stream name
+ *
+ * @param[in] stream_name name of the log stream
+ * 
+ * @return
+ *      void
+ */
+void bytebeam_log_stream_set(char* stream_name);
+
+/**
+ * @brief Get the bytebeam log stream name
+ *
+ * @param
+ *      void
+ * 
+ * @return
+ *      bytebeam log stream name
+ */
+char* bytebeam_log_stream_get();
 
 /**
  * @brief Publish Log to Bytebeam

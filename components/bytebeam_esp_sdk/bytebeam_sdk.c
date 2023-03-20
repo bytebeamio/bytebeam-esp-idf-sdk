@@ -20,6 +20,7 @@ char *ota_action_id = "";
 static int function_handler_index = 0;
 
 static bytebeam_client_t *bytebeam_log_client = NULL;
+static char bytebeam_log_stream[BYTEBEAM_LOG_STREAM_STR_LEN] = "logs";
 static bytebeam_log_level_t bytebeam_log_level = BYTEBEAM_LOG_LEVEL_NONE;
 static bool is_cloud_logging_enable = true;
 
@@ -326,7 +327,7 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
     ota_action_id = NULL;
 
     // clearing bytebeam log client
-    bytebeam_log_set_client(NULL);
+    bytebeam_log_client_set(NULL);
 
     // clearing bytebeam log level
     bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_NONE);
@@ -536,7 +537,7 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
         return BB_FAILURE;
     }
 
-    bytebeam_log_set_client(bytebeam_client);
+    bytebeam_log_client_set(bytebeam_client);
     bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL);
 
     ESP_LOGI(TAG, "Bytebeam Client initialized !!");
@@ -1045,14 +1046,9 @@ void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client)
     function_handler_index = 0;
 }
 
-void bytebeam_log_set_client(bytebeam_client_t *bytebeam_client)
+void bytebeam_log_client_set(bytebeam_client_t *bytebeam_client)
 {
     bytebeam_log_client = bytebeam_client;
-}
-
-void bytebeam_log_level_set(bytebeam_log_level_t level)
-{
-    bytebeam_log_level = level;
 }
 
 void bytebeam_enable_cloud_logging()
@@ -1070,9 +1066,30 @@ void bytebeam_disable_cloud_logging()
     is_cloud_logging_enable = false;
 }
 
+void bytebeam_log_level_set(bytebeam_log_level_t level)
+{
+    bytebeam_log_level = level;
+}
+
 bytebeam_log_level_t bytebeam_log_level_get(void)
 {
     return bytebeam_log_level;
+}
+
+void bytebeam_log_stream_set(char* stream_name)
+{
+    int max_len = BYTEBEAM_LOG_STREAM_STR_LEN;
+    int temp_var = snprintf(bytebeam_log_stream, max_len, "%s", stream_name);
+
+    if(temp_var >= max_len)
+    {
+        ESP_LOGE(TAG, "log stream size exceeded buffer size");
+    }
+}
+
+char* bytebeam_log_stream_get()
+{
+    return bytebeam_log_stream;
 }
 
 bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const char *fmt, ...)
@@ -1235,7 +1252,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     ESP_LOGD(TAG, "\n Log to Send :\n%s\n", log_string_json);
 
-    int ret_val = bytebeam_publish_to_stream(bytebeam_log_client, "Logs", log_string_json);
+    int ret_val = bytebeam_publish_to_stream(bytebeam_log_client, bytebeam_log_stream, log_string_json);
 
     cJSON_Delete(device_log_json_list);
     cJSON_free(log_string_json);
