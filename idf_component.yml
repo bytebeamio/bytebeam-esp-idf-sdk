@@ -3,9 +3,9 @@ description: Application for connecting ESP devices to Bytebeam IoT platform
 maintainers:
   - Mayank Narang <https://github.com/mayankbytebeam>
 url: https://bytebeam.io/docs/esp-idf
-repository: https://github.com/bytebeamio/esp-bytebeam-sdk.git
-documentation: https://github.com/bytebeamio/esp-bytebeam-sdk/#sdk-setup-and-integration--
-issues: https://github.com/bytebeamio/esp-bytebeam-sdk/issues
+repository: https://github.com/bytebeamio/bytebeam-esp-idf-sdk.git
+documentation: https://github.com/bytebeamio/bytebeam-esp-idf-sdk/#sdk-setup-and-integration--
+issues: https://github.com/bytebeamio/bytebeam-esp-idf-sdk/issues
 dependencies:
   idf:
     version: ">=4.4"

@@ -13,7 +13,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bytebeamio/esp-bytebeam-sdk"
+    "url": "https://github.com/bytebeamio/bytebeam-esp-idf-sdk"
   },
   "homepage": "https://bytebeam.io/docs/esp-idf",
   "frameworks": "espidf",

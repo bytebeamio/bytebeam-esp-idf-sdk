@@ -1,27 +1,27 @@
-# Contributing to esp-bytebeam-sdk
+# Contributing to bytebeam-esp-sdk
 
-If you have loved using esp-bytebeam-sdk and want to give back, we would love to have you open GitHub issues and PRs for features, bugs and documentation improvements.
+If you have loved using bytebeam-esp-sdk and want to give back, we would love to have you open GitHub issues and PRs for features, bugs and documentation improvements.
 
-Before you start, please make yourself familiar with the architecture of esp-bytebeam-sdk and read the [design docs][design] before making your first contribution to increase it's chances of being adopted. Please follow the [Code of Conduct][coc] when communicating with other members of the community and keep discussions civil, we are excited to have you make your first of many contributiions to this repository, welcome!
+Before you start, please make yourself familiar with the architecture of bytebeam-esp-sdk and read the [design docs][design] before making your first contribution to increase it's chances of being adopted. Please follow the [Code of Conduct][coc] when communicating with other members of the community and keep discussions civil, we are excited to have you make your first of many contributiions to this repository, welcome!
 
 ## Steps to Contribute
 
 ### Getting the project
 
-Go to <https://github.com/bytebeamio/esp-bytebeam-sdk> and fork the project repository.
+Go to <https://github.com/bytebeamio/bytebeam-esp-idf-sdk> and fork the project repository.
 
 ```bash
 # Open the terminal where you want to do the project setup
 $ cd path_to_project_setup
 
-# Remove the esp-bytebeam-sdk project if any
-$ rmdir /s /q esp-bytebeam-sdk
+# Remove the bytebeam-esp-idf-sdk project if any
+$ rmdir /s /q bytebeam-esp-idf-sdk
 
 # Clone your fork
-$ git clone git@github.com:<YOU>/esp-bytebeam-sdk.git
+$ git clone git@github.com:<YOU>/bytebeam-esp-idf-sdk.git
 
 # Step into project directory
-$ cd esp-bytebeam-sdk
+$ cd bytebeam-esp-idf-sdk
 
 # Create a branch for your changes (say my_topical_branch)
 $ git checkout -b my_topical_branch
@@ -66,11 +66,11 @@ Tests Suite is not yet added to the repo, will add it once we are done with the 
 
 ## Add yourself to Contributors
 
-Thank you for contributing to esp-bytebeam-sdk, Please feel free to add yourself to [Contributors][contributors]
+Thank you for contributing to bytebeam-esp-sdk, Please feel free to add yourself to [Contributors][contributors]
 
 ## License
 
-esp-bytebeam-sdk is licensed under the permissive [Apache License Version 2.0][license] and we accept contributions under the implied notion that they are made in complete renunciation of the contributors any rights or claims to the same after the code has been merged into the codebase.
+bytebeam-esp-sdk is licensed under the permissive [Apache License Version 2.0][license] and we accept contributions under the implied notion that they are made in complete renunciation of the contributors any rights or claims to the same after the code has been merged into the codebase.
 
 [license]: LICENSE
 [design]: docs/design.md

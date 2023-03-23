@@ -1,4 +1,4 @@
-# Bytebeam ESP SDK
+# bytebeam-esp-sdk
 
 <div>
     <img alt="Bytebeam ESP SDK Logo" src="docs/logo.png" />
