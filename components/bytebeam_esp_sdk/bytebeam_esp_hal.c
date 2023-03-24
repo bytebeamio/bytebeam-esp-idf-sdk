@@ -48,6 +48,7 @@ int bytebeam_hal_restart(void)
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
     static int loop_var = 0;
+    static int update_progress_offset = 10;
     static int update_progress_percent = 0;
     static int downloaded_data_len = 0;
 
@@ -74,25 +75,24 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         update_progress_percent = (((float)downloaded_data_len / (float)ota_img_data_len) * 100.00);
 
         if (update_progress_percent == loop_var) {
-            if (loop_var == 100) {
-                if ((publish_action_status(temp_device_config, ota_action_id, update_progress_percent, mqtt_client_handle, "Completed", "Success")) != 0) {
-                    ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA progress status");
-                }
-            } else {
-                if ((publish_action_status(temp_device_config, ota_action_id, update_progress_percent, mqtt_client_handle, "Progress", "Success")) != 0) {
-                    ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA progress status");
-                }
+            ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "update_progress_percent : %d", update_progress_percent);
+            ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "ota_action_id : %s", ota_action_id);
+
+            // publish the OTA progress
+            if(publish_action_status(temp_device_config, ota_action_id, update_progress_percent, mqtt_client_handle, "Progress", "Success") != 0) {
+                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA progress status");
             }
 
-            loop_var = loop_var + 5;
+            if (loop_var == 100) {
+                // reset the varibales
+                loop_var = 0;
+                update_progress_percent = 0;
+                downloaded_data_len = 0;
+            } else {
+                // mark the next progress stamp
+                loop_var = loop_var + update_progress_offset;
+            }
         }
-
-        if (loop_var == 105) {
-            loop_var = 0;
-            update_progress_percent = 0;
-            downloaded_data_len = 0;
-        }
-
         break;
 
     case HTTP_EVENT_ON_FINISH:
