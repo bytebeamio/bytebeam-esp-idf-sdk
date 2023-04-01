@@ -478,7 +478,7 @@ bytebeam_err_t bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_cli
 {
     int ret_val = 0;
 
-    ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, 100, bytebeam_client->client, "Completed", "No Error");
+    ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, 100, bytebeam_client->client, "Completed", "");
 
     if (ret_val != 0) {
         return BB_FAILURE;
@@ -504,7 +504,7 @@ bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_clie
 {
     int ret_val = 0;
 
-    ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, progress_percentage, bytebeam_client->client, "Progress", "No Error");
+    ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, progress_percentage, bytebeam_client->client, "Progress", "");
 
     if (ret_val != 0) {
         return BB_FAILURE;

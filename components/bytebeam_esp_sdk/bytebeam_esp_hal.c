@@ -51,6 +51,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     static int update_progress_offset = 10;
     static int update_progress_percent = 0;
     static int downloaded_data_len = 0;
+    static const char* update_progress_status = "Downloading";
 
     switch (evt->event_id) {
     case HTTP_EVENT_ERROR:
@@ -78,8 +79,13 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "update_progress_percent : %d", update_progress_percent);
             ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "ota_action_id : %s", ota_action_id);
 
-            // publish the OTA progress
-            if(publish_action_status(temp_device_config, ota_action_id, update_progress_percent, mqtt_client_handle, "Progress", "Success") != 0) {
+            // If we are done, change the status to downloaded
+            if(update_progress_percent == 100) {
+                update_progress_status = "Downloaded";
+            }
+
+            // publish the OTA progress status
+            if(publish_action_status(temp_device_config, ota_action_id, update_progress_percent, mqtt_client_handle, update_progress_status, "") != 0) {
                 ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA progress status");
             }
 
