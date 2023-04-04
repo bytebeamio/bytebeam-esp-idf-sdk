@@ -474,45 +474,6 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
     return 0;
 }
 
-bytebeam_err_t bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_client, char *action_id)
-{
-    int ret_val = 0;
-
-    ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, 100, bytebeam_client->client, "Completed", "");
-
-    if (ret_val != 0) {
-        return BB_FAILURE;
-    } else {
-        return BB_SUCCESS;
-    }
-}
-
-bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client, char *action_id)
-{
-    int ret_val = 0;
-
-    ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, 0, bytebeam_client->client, "Failed", "Action failed");
-
-    if (ret_val != 0) {
-        return BB_FAILURE;
-    } else {
-        return BB_SUCCESS;
-    }
-}
-
-bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage)
-{
-    int ret_val = 0;
-
-    ret_val = publish_action_status(bytebeam_client->device_cfg, action_id, progress_percentage, bytebeam_client->client, "Progress", "");
-
-    if (ret_val != 0) {
-        return BB_FAILURE;
-    } else {
-        return BB_SUCCESS;
-    }
-}
-
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
@@ -564,34 +525,196 @@ bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client)
     return BB_SUCCESS;
 }
 
-bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
+bytebeam_err_t bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_client, char *action_id)
 {
     int ret_val = 0;
 
-    ret_val = bytebeam_hal_start_mqtt(bytebeam_client);
+    ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, 100, "Completed", "");
 
     if (ret_val != 0) {
-        ESP_LOGE(TAG, "Bytebeam Client start failed");
         return BB_FAILURE;
     } else {
-        ESP_LOGI(TAG, "Bytebeam Client started !!");
         return BB_SUCCESS;
     }
 }
 
-bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client)
+bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client, char *action_id)
 {
     int ret_val = 0;
 
-    ret_val = bytebeam_hal_stop_mqtt(bytebeam_client);
+    ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", "Action failed");
 
     if (ret_val != 0) {
-        ESP_LOGE(TAG, "Bytebam Client stop failed");
         return BB_FAILURE;
     } else {
-        ESP_LOGI(TAG, "Bytebeam Client stopped !!");
         return BB_SUCCESS;
     }
+}
+
+bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage)
+{
+    int ret_val = 0;
+
+    ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, progress_percentage, "Progress", "");
+
+    if (ret_val != 0) {
+        return BB_FAILURE;
+    } else {
+        return BB_SUCCESS;
+    }
+}
+
+bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client, char *action_id, int percentage, char *status, char *error_message)
+{
+    static uint64_t sequence = 0;
+    cJSON *action_status_json_list = NULL;
+    cJSON *action_status_json = NULL;
+    cJSON *percentage_json = NULL;
+    cJSON *timestamp_json = NULL;
+    cJSON *device_status_json = NULL;
+    cJSON *action_id_json = NULL;
+    cJSON *action_errors_json = NULL;
+    cJSON *seq_json = NULL;
+    char *string_json = NULL;
+    const char *ota_states[1] = { "" };
+
+    int qos = 1;
+    int msg_id = 0;
+    char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = {0};
+
+    action_status_json_list = cJSON_CreateArray();
+
+    if (action_status_json_list == NULL) {
+        ESP_LOGE(TAG, "Json Init failed.");
+
+        return BB_FAILURE;
+    }
+
+    action_status_json = cJSON_CreateObject();
+
+    if (action_status_json == NULL) {
+        ESP_LOGE(TAG, "Json add failed.");
+
+        cJSON_Delete(action_status_json_list);
+        return BB_FAILURE;
+    }
+
+    struct timeval te;
+    gettimeofday(&te, NULL); // get current time
+    long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000;
+
+    timestamp_json = cJSON_CreateNumber(milliseconds);
+
+    if (timestamp_json == NULL) {
+        ESP_LOGE(TAG, "Json add time stamp failed.");
+
+        cJSON_Delete(action_status_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(action_status_json, "timestamp", timestamp_json);
+
+    sequence++;
+    seq_json = cJSON_CreateNumber(sequence);
+
+    if (seq_json == NULL) {
+        ESP_LOGE(TAG, "Json add seq id failed.");
+     
+        cJSON_Delete(action_status_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(action_status_json, "sequence", seq_json);
+
+    device_status_json = cJSON_CreateString(status);
+
+    if (device_status_json == NULL) {
+        ESP_LOGE(TAG, "Json add device status failed.");
+
+        cJSON_Delete(action_status_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(action_status_json, "state", device_status_json);
+
+    ota_states[0] = error_message;
+    action_errors_json = cJSON_CreateStringArray(ota_states, 1);
+
+    if (action_errors_json == NULL) {
+        ESP_LOGE(TAG, "Json add action errors failed.");
+
+        cJSON_Delete(action_status_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(action_status_json, "errors", action_errors_json);
+
+    action_id_json = cJSON_CreateString(action_id);
+
+    if (action_id_json == NULL) {
+        ESP_LOGE(TAG, "Json add action_id failed.");
+
+        cJSON_Delete(action_status_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(action_status_json, "id", action_id_json);
+
+    percentage_json = cJSON_CreateNumber(percentage);
+
+    if (percentage_json == NULL) {
+        ESP_LOGE(TAG, "Json add progress percentage failed.");
+
+        cJSON_Delete(action_status_json_list);
+        return BB_FAILURE;
+    }
+
+    cJSON_AddItemToObject(action_status_json, "progress", percentage_json);
+
+    cJSON_AddItemToArray(action_status_json_list, action_status_json);
+
+    string_json = cJSON_Print(action_status_json_list);
+
+    if(string_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json string print failed.");
+
+        cJSON_Delete(action_status_json_list);
+        return BB_FAILURE;
+    } 
+
+    ESP_LOGD(TAG, "\nTrying to print:\n%s\n", string_json);
+
+    int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
+    int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/action/status", bytebeam_client->device_cfg.project_id, bytebeam_client->device_cfg.device_id);
+
+    if(temp_var >= max_len)
+    {
+        ESP_LOGE(TAG, "action status topic size exceeded topic buffer size");
+
+        cJSON_Delete(action_status_json_list);
+        cJSON_free(string_json);
+        return BB_FAILURE;
+    }
+
+    ESP_LOGI(TAG, "\nTopic is %s\n", topic);
+
+    msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, string_json, strlen(string_json), qos);
+
+    if (msg_id != -1) {
+        ESP_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, string_json);
+    } else {
+        ESP_LOGE(TAG, "Publish Failed.");
+
+        cJSON_Delete(action_status_json_list);
+        cJSON_free(string_json);
+        return BB_FAILURE;
+    }
+
+    cJSON_Delete(action_status_json_list);
+    cJSON_free(string_json);
+
+    return BB_SUCCESS;
 }
 
 bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload)
@@ -622,6 +745,36 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
     } else {
         ESP_LOGE(TAG, "Publish to %s stream Failed", stream_name);
         return BB_FAILURE;
+    }
+}
+
+bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
+{
+    int ret_val = 0;
+
+    ret_val = bytebeam_hal_start_mqtt(bytebeam_client);
+
+    if (ret_val != 0) {
+        ESP_LOGE(TAG, "Bytebeam Client start failed");
+        return BB_FAILURE;
+    } else {
+        ESP_LOGI(TAG, "Bytebeam Client started !!");
+        return BB_SUCCESS;
+    }
+}
+
+bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client)
+{
+    int ret_val = 0;
+
+    ret_val = bytebeam_hal_stop_mqtt(bytebeam_client);
+
+    if (ret_val != 0) {
+        ESP_LOGE(TAG, "Bytebam Client stop failed");
+        return BB_FAILURE;
+    } else {
+        ESP_LOGI(TAG, "Bytebeam Client stopped !!");
+        return BB_SUCCESS;
     }
 }
 
@@ -676,162 +829,6 @@ int parse_ota_json(char *payload_string, char *url_string_return)
 
     cJSON_Delete(pl_json);
     
-    return 0;
-}
-
-int publish_action_status(bytebeam_device_config_t device_cfg,
-                        char *action_id, int percentage,
-                        bytebeam_client_handle_t client, char *status,
-                        char *error_message)
-{
-    static uint64_t sequence = 0;
-    cJSON *action_status_json_list = NULL;
-    cJSON *action_status_json = NULL;
-    cJSON *percentage_json = NULL;
-    cJSON *timestamp_json = NULL;
-    cJSON *device_status_json = NULL;
-    cJSON *action_id_json = NULL;
-    cJSON *action_errors_json = NULL;
-    cJSON *seq_json = NULL;
-    char *string_json = NULL;
-    const char *ota_states[1] = { "" };
-
-    int qos = 1;
-    int msg_id = 0;
-    char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = {0};
-
-    action_status_json_list = cJSON_CreateArray();
-
-    if (action_status_json_list == NULL) {
-        ESP_LOGE(TAG, "Json Init failed.");
-
-        return -1;
-    }
-
-    action_status_json = cJSON_CreateObject();
-
-    if (action_status_json == NULL) {
-        ESP_LOGE(TAG, "Json add failed.");
-
-        cJSON_Delete(action_status_json_list);
-        return -1;
-    }
-
-    struct timeval te;
-    gettimeofday(&te, NULL); // get current time
-    long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000;
-
-    timestamp_json = cJSON_CreateNumber(milliseconds);
-
-    if (timestamp_json == NULL) {
-        ESP_LOGE(TAG, "Json add time stamp failed.");
-
-        cJSON_Delete(action_status_json_list);
-        return -1;
-    }
-
-    cJSON_AddItemToObject(action_status_json, "timestamp", timestamp_json);
-
-    sequence++;
-    seq_json = cJSON_CreateNumber(sequence);
-
-    if (seq_json == NULL) {
-        ESP_LOGE(TAG, "Json add seq id failed.");
-     
-        cJSON_Delete(action_status_json_list);
-        return -1;
-    }
-
-    cJSON_AddItemToObject(action_status_json, "sequence", seq_json);
-
-    device_status_json = cJSON_CreateString(status);
-
-    if (device_status_json == NULL) {
-        ESP_LOGE(TAG, "Json add device status failed.");
-
-        cJSON_Delete(action_status_json_list);
-        return -1;
-    }
-
-    cJSON_AddItemToObject(action_status_json, "state", device_status_json);
-
-    ota_states[0] = error_message;
-    action_errors_json = cJSON_CreateStringArray(ota_states, 1);
-
-    if (action_errors_json == NULL) {
-        ESP_LOGE(TAG, "Json add action errors failed.");
-
-        cJSON_Delete(action_status_json_list);
-        return -1;
-    }
-
-    cJSON_AddItemToObject(action_status_json, "errors", action_errors_json);
-
-    action_id_json = cJSON_CreateString(action_id);
-
-    if (action_id_json == NULL) {
-        ESP_LOGE(TAG, "Json add action_id failed.");
-
-        cJSON_Delete(action_status_json_list);
-        return -1;
-    }
-
-    cJSON_AddItemToObject(action_status_json, "id", action_id_json);
-
-    percentage_json = cJSON_CreateNumber(percentage);
-
-    if (percentage_json == NULL) {
-        ESP_LOGE(TAG, "Json add progress percentage failed.");
-
-        cJSON_Delete(action_status_json_list);
-        return -1;
-    }
-
-    cJSON_AddItemToObject(action_status_json, "progress", percentage_json);
-
-    cJSON_AddItemToArray(action_status_json_list, action_status_json);
-
-    string_json = cJSON_Print(action_status_json_list);
-
-    if(string_json == NULL)
-    {
-        ESP_LOGE(TAG, "Json string print failed.");
-
-        cJSON_Delete(action_status_json_list);
-        return -1;
-    } 
-
-    ESP_LOGD(TAG, "\nTrying to print:\n%s\n", string_json);
-
-    int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
-    int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/action/status", device_cfg.project_id, device_cfg.device_id);
-
-    if(temp_var >= max_len)
-    {
-        ESP_LOGE(TAG, "action status topic size exceeded topic buffer size");
-
-        cJSON_Delete(action_status_json_list);
-        cJSON_free(string_json);
-        return -1;
-    }
-
-    ESP_LOGI(TAG, "\nTopic is %s\n", topic);
-
-    msg_id = bytebeam_hal_mqtt_publish(client, topic, string_json, strlen(string_json), qos);
-
-    if (msg_id != -1) {
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, string_json);
-    } else {
-        ESP_LOGE(TAG, "Publish Failed");
-
-        cJSON_Delete(action_status_json_list);
-        cJSON_free(string_json);
-        return -1;
-    }
-
-    cJSON_Delete(action_status_json_list);
-    cJSON_free(string_json);
-
     return 0;
 }
 

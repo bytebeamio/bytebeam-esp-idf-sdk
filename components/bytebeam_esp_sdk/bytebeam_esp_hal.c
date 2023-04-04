@@ -19,8 +19,7 @@ static int ota_img_data_len = 0;
 static int ota_update_completed = 0;
 static char ota_action_id_str[OTA_ACTION_ID_STR_LEN];
 
-static bytebeam_client_handle_t mqtt_client_handle;
-static bytebeam_device_config_t temp_device_config;
+static bytebeam_client_t *bytebeam_ota_client;
 
 static const char *TAG_BYTE_BEAM_ESP_HAL = "BYTEBEAM_SDK";
 
@@ -85,7 +84,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             }
 
             // publish the OTA progress status
-            if(publish_action_status(temp_device_config, ota_action_id, update_progress_percent, mqtt_client_handle, update_progress_status, "") != 0) {
+            if(bytebeam_publish_action_status(bytebeam_ota_client, ota_action_id, update_progress_percent, update_progress_status, "") != 0) {
                 ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA progress status");
             }
 
@@ -137,23 +136,22 @@ esp_err_t _test_event_handler(esp_http_client_event_t *evt)
 
 int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
 {
-    bytebeam_device_config_t *device_cfg = &(bytebeam_client->device_cfg);
-    mqtt_client_handle = bytebeam_client->client;
-    temp_device_config = bytebeam_client->device_cfg;
+    // set the ota client reference to the incoming bytebeam client
+    bytebeam_ota_client = bytebeam_client;
 
     esp_http_client_config_t config = {
         .url = ota_url,
-        .cert_pem = (char *)device_cfg->ca_cert_pem,
-        .client_cert_pem = (char *)device_cfg->client_cert_pem,
-        .client_key_pem = (char *)device_cfg->client_key_pem,
+        .cert_pem = (char *)bytebeam_ota_client->device_cfg.ca_cert_pem,
+        .client_cert_pem = (char *)bytebeam_ota_client->device_cfg.client_cert_pem,
+        .client_key_pem = (char *)bytebeam_ota_client->device_cfg.client_key_pem,
         .event_handler = _http_event_handler,
     };
 
     esp_http_client_config_t test_config = {
         .url = ota_url,
-        .cert_pem = (char *)device_cfg->ca_cert_pem,
-        .client_cert_pem = (char *)device_cfg->client_cert_pem,
-        .client_key_pem = (char *)device_cfg->client_key_pem,
+        .cert_pem = (char *)bytebeam_ota_client->device_cfg.ca_cert_pem,
+        .client_cert_pem = (char *)bytebeam_ota_client->device_cfg.client_cert_pem,
+        .client_key_pem = (char *)bytebeam_ota_client->device_cfg.client_key_pem,
         .event_handler = _test_event_handler,
     };
 

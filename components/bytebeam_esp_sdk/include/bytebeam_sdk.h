@@ -209,6 +209,21 @@ bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client
 bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage);
 
 /**
+ * @brief Publish message indicating action status of action being executed.
+ *
+ * @param[in] bytebeam_client     bytebeam client handle
+ * @param[in] action_id           action id for particular action
+ * @param[in] percentage          action execution progress in percentage
+ * @param[in] status              action state of the execution
+ * @param[in] error_message       error message if action failed
+ *
+ * @return
+ *      BB_SUCCESS : Message publish successful
+ *      BB_FAILURE : Message publish failed
+ */
+bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t* client, char *action_id, int percentage, char *status, char *error_message);
+
+/**
  * @brief Publish message to particualar stream
  *
  * @param[in] bytebeam_client     bytebeam client handle
