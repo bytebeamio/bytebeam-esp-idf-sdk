@@ -97,11 +97,22 @@ static void sync_time_from_ntp(void)
 // handler for hello world action
 int handle_hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
 {
+    int ret_val = 0;
+    
     //
     // nothing much to do here at the moment
     //
 
     ESP_LOGI(TAG, "Hello World !");
+
+    // publish action completed response
+    ret_val = bytebeam_publish_action_completed(bytebeam_client, action_id);
+
+    if(ret_val != 0) 
+    {
+        ESP_LOGE(TAG, "Failed to Publish action completed response for Toggle LED action");
+        return -1;
+    }
 
     return 0;
 }
@@ -109,11 +120,22 @@ int handle_hello_world(bytebeam_client_t *bytebeam_client, char *args, char *act
 // yet another handler for hello world action
 int handle_yet_another_hello_world(bytebeam_client_t *bytebeam_client, char *args, char *action_id)
 {
+    int ret_val = 0;
+
     //
     // nothing much to do here at the moment
     //
 
     ESP_LOGI(TAG, "Yet Another Hello World !");
+
+    // publish action completed response
+    ret_val = bytebeam_publish_action_completed(bytebeam_client, action_id);
+
+    if(ret_val != 0) 
+    {
+        ESP_LOGE(TAG, "Failed to Publish action completed response for Toggle LED action");
+        return -1;
+    }
 
     return 0;
 }

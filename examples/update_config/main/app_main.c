@@ -294,7 +294,7 @@ int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *a
         ESP_LOGE(TAG, "ERROR in parsing the JSON\n");
 
         // publish action failed response
-        ret_val = bytebeam_publish_action_failed(bytebeam_client, action_id);
+        ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", "Json Parsing Failed.");
 
         if (ret_val != 0)
         {
@@ -311,7 +311,7 @@ int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *a
         ESP_LOGE(TAG, "Error parsing update config name\n");
 
         // publish action failed response
-        ret_val = bytebeam_publish_action_failed(bytebeam_client, action_id);
+        ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", "Error parsing the update config name");
 
         if (ret_val != 0)
         {
@@ -331,7 +331,7 @@ int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *a
         ESP_LOGE(TAG, "Error parsing update config version\n");
 
         // publish action failed response
-        ret_val = bytebeam_publish_action_failed(bytebeam_client, action_id);
+        ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", "Error parsing the update config version");
 
         if (ret_val != 0)
         {
@@ -351,7 +351,7 @@ int handle_update_config(bytebeam_client_t *bytebeam_client, char *args, char *a
         ESP_LOGE(TAG, "Error parsing update config step value\n");
 
         // publish action failed response
-        ret_val = bytebeam_publish_action_failed(bytebeam_client, action_id);
+        ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", "Error parsing the update config step value");
 
         if (ret_val != 0)
         {
