@@ -408,6 +408,11 @@ int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client)
         }
     }
 
+    // publish the device heartbeat
+    if (bytebeam_publish_device_heartbeat(bytebeam_client) != 0) {
+        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish device heartbeat");
+    }
+
     return 0;
 }
 

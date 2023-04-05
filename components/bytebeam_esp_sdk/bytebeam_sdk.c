@@ -13,6 +13,7 @@
 #include "esp_spiffs.h"
 
 #include "esp_sntp.h"
+#include "esp_timer.h"
 
 cJSON *cert_json = NULL;
 
@@ -474,10 +475,164 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
     return 0;
 }
 
+int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
+{
+    int ret_val = 0;
+    struct timeval te;
+    long long milliseconds = 0;
+    static uint64_t sequence = 0;
+    const char* device_status_str = "";
+    const char* reboot_reason_str = "";
+    long long uptime = 0;
+
+    cJSON *device_shadow_json_list = NULL;
+    cJSON *device_shadow_json = NULL;
+    cJSON *sequence_json = NULL;
+    cJSON *timestamp_json = NULL;
+    cJSON *device_status_json = NULL;
+    cJSON *device_reset_reason_json = NULL;
+    cJSON *device_uptime_json = NULL;
+
+    char *string_json = NULL;
+
+    device_shadow_json_list = cJSON_CreateArray();
+
+    if(device_shadow_json_list == NULL)
+    {
+        ESP_LOGE(TAG, "Json Init failed.");
+        return -1;
+    }
+
+    device_shadow_json = cJSON_CreateObject();
+
+    if(device_shadow_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json add failed.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
+    // get the current time
+    gettimeofday(&te, NULL);
+    milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000;
+
+    // make sure you got the epoch millis
+    if(milliseconds == 0)
+    {
+        ESP_LOGE(TAG, "failed to get epoch millis.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
+    timestamp_json = cJSON_CreateNumber(milliseconds);
+
+    if(timestamp_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json add time stamp failed.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
+    cJSON_AddItemToObject(device_shadow_json, "timestamp", timestamp_json);
+
+    sequence++;
+    sequence_json = cJSON_CreateNumber(sequence);
+
+    if(sequence_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json add sequence id failed.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
+    cJSON_AddItemToObject(device_shadow_json, "sequence", sequence_json);
+
+    device_status_str = "Bytebeam Client Initialized !";
+    device_status_json = cJSON_CreateString(device_status_str);
+
+    if(device_status_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json add device status failed.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
+    cJSON_AddItemToObject(device_shadow_json, "Status", device_status_json);
+
+    esp_reset_reason_t reboot_reason_id = esp_reset_reason();
+
+    switch(reboot_reason_id) {
+        case ESP_RST_UNKNOWN   : reboot_reason_str = "Unknown Reset";            break;
+        case ESP_RST_POWERON   : reboot_reason_str = "Power On Reset";           break;
+        case ESP_RST_EXT       : reboot_reason_str = "External Pin Reset";       break;
+        case ESP_RST_SW        : reboot_reason_str = "Software Reset";           break;
+        case ESP_RST_PANIC     : reboot_reason_str = "Hard Fault Reset";         break;
+        case ESP_RST_INT_WDT   : reboot_reason_str = "Interrupt Watchdog Reset"; break;
+        case ESP_RST_TASK_WDT  : reboot_reason_str = "Task Watchdog Reset";      break;
+        case ESP_RST_WDT       : reboot_reason_str = "Other Watchdog Reset";     break;
+        case ESP_RST_DEEPSLEEP : reboot_reason_str = "Exiting Deep Sleep Reset"; break;
+        case ESP_RST_BROWNOUT  : reboot_reason_str = "Brownout Reset";           break;
+        case ESP_RST_SDIO      : reboot_reason_str = "SDIO Reset";               break;
+
+        default: reboot_reason_str = "Unknown Reset Id";
+    }
+
+    device_reset_reason_json = cJSON_CreateString(reboot_reason_str);
+
+    if(device_reset_reason_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json add device reboot reason failed.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
+    cJSON_AddItemToObject(device_shadow_json, "Reset_Reason", device_reset_reason_json);
+
+    // get the device up time
+    uptime = esp_timer_get_time();
+
+    // change to millis interval
+    uptime = uptime/1000;
+
+    device_uptime_json = cJSON_CreateNumber(uptime);
+
+    if(device_uptime_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json add uptime failed.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
+    cJSON_AddItemToObject(device_shadow_json, "Uptime", device_uptime_json);
+
+    cJSON_AddItemToArray(device_shadow_json_list, device_shadow_json);
+
+    string_json = cJSON_Print(device_shadow_json_list);
+
+    if(string_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json string print failed.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
+    ESP_LOGI(TAG, "\nStatus to send:\n%s\n", string_json);
+
+    // publish the json to device shadow stream
+    ret_val = bytebeam_publish_to_stream(bytebeam_client, "device_shadow", string_json);
+
+    if (ret_val != 0) {
+        return BB_FAILURE;
+    } else {
+        return BB_SUCCESS;
+    }
+}
+
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
     
+    // parse the device config json stored in file system
     ret_val = parse_device_config_file(&(bytebeam_client->device_cfg), &(bytebeam_client->mqtt_cfg));
 
     if (ret_val != 0) {
@@ -488,6 +643,7 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
         return BB_FAILURE;
     }
 
+    // initialize the bytebeam hal
     ret_val = bytebeam_hal_init(bytebeam_client);
 
     if (ret_val != 0) {
