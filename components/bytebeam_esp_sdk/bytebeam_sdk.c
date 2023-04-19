@@ -481,7 +481,6 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
     struct timeval te;
     long long milliseconds = 0;
     static uint64_t sequence = 0;
-    const char* device_status_str = "";
     const char* reboot_reason_str = "";
     long long uptime = 0;
 
@@ -492,6 +491,10 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
     cJSON *device_status_json = NULL;
     cJSON *device_reset_reason_json = NULL;
     cJSON *device_uptime_json = NULL;
+    cJSON *device_software_type_json = NULL;
+    cJSON *device_software_version_json = NULL;
+    cJSON *device_hardware_type_json = NULL;
+    cJSON *device_hardware_version_json = NULL;
 
     char *string_json = NULL;
 
@@ -547,18 +550,6 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     cJSON_AddItemToObject(device_shadow_json, "sequence", sequence_json);
 
-    device_status_str = "Bytebeam Client Initialized !";
-    device_status_json = cJSON_CreateString(device_status_str);
-
-    if(device_status_json == NULL)
-    {
-        ESP_LOGE(TAG, "Json add device status failed.");
-        cJSON_Delete(device_shadow_json_list);
-        return -1;
-    }
-
-    cJSON_AddItemToObject(device_shadow_json, "Status", device_status_json);
-
     esp_reset_reason_t reboot_reason_id = esp_reset_reason();
 
     switch(reboot_reason_id) {
@@ -598,12 +589,85 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     if(device_uptime_json == NULL)
     {
-        ESP_LOGE(TAG, "Json add uptime failed.");
+        ESP_LOGE(TAG, "Json add device uptime failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
 
     cJSON_AddItemToObject(device_shadow_json, "Uptime", device_uptime_json);
+
+    // if status is not provided append the dummy one showing device activity
+    if(bytebeam_client->device_info.status == NULL) {
+        bytebeam_client->device_info.status = "Device is Active!";
+    }
+
+    device_status_json = cJSON_CreateString(bytebeam_client->device_info.status);
+
+    if(device_status_json == NULL)
+    {
+        ESP_LOGE(TAG, "Json add device status failed.");
+        cJSON_Delete(device_shadow_json_list);
+        return -1;
+    }
+
+    cJSON_AddItemToObject(device_shadow_json, "Status", device_status_json);
+
+    // if software type is provided append it else leave
+    if(bytebeam_client->device_info.software_type != NULL) {
+        device_software_type_json = cJSON_CreateString(bytebeam_client->device_info.software_type);
+
+        if(device_software_type_json == NULL)
+        {
+            ESP_LOGE(TAG, "Json add device software type failed.");
+            cJSON_Delete(device_shadow_json_list);
+            return -1;
+        }
+
+        cJSON_AddItemToObject(device_shadow_json, "Software_Type", device_software_type_json);
+    }
+
+    // if software version is provided append it else leave
+    if(bytebeam_client->device_info.software_version != NULL) {
+         device_software_version_json = cJSON_CreateString(bytebeam_client->device_info.software_version);
+
+        if(device_software_version_json == NULL)
+        {
+            ESP_LOGE(TAG, "Json add device software version failed.");
+            cJSON_Delete(device_shadow_json_list);
+            return -1;
+        }
+
+        cJSON_AddItemToObject(device_shadow_json, "Software_Version", device_software_version_json);
+    }
+
+    // if hardware type is provided append it else leave
+    if(bytebeam_client->device_info.hardware_type != NULL) {
+
+        device_hardware_type_json = cJSON_CreateString(bytebeam_client->device_info.hardware_type);
+
+        if(device_hardware_type_json == NULL)
+        {
+            ESP_LOGE(TAG, "Json add device hardware type failed.");
+            cJSON_Delete(device_shadow_json_list);
+            return -1;
+        }
+
+        cJSON_AddItemToObject(device_shadow_json, "Hardware_Type", device_hardware_type_json);
+    }
+
+    // if hardware version is provided append it else leave
+    if(bytebeam_client->device_info.hardware_version != NULL) {
+        device_hardware_version_json = cJSON_CreateString(bytebeam_client->device_info.hardware_version);
+
+        if(device_hardware_version_json == NULL)
+        {
+            ESP_LOGE(TAG, "Json add device hardware version failed.");
+            cJSON_Delete(device_shadow_json_list);
+            return -1;
+        }
+
+        cJSON_AddItemToObject(device_shadow_json, "Hardware_Version", device_hardware_version_json);
+    }
 
     cJSON_AddItemToArray(device_shadow_json_list, device_shadow_json);
 

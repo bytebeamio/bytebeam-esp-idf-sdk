@@ -122,6 +122,14 @@ typedef struct {
     int (*func)(struct bytebeam_client *bytebeam_client, char *args, char *action_id);
 } bytebeam_action_functions_map_t;
 
+typedef struct bytebeam_device_info {
+    const char *status;
+    const char *software_type;
+    const char *software_version;
+    const char *hardware_type;
+    const char *hardware_version;
+} bytebeam_device_info_t;
+
 /**
  * @struct bytebeam_client_t
  * This struct contains all the configuration for instance of MQTT client
@@ -137,6 +145,7 @@ typedef struct {
  * Connection status of MQTT client instance.
  */
 typedef struct bytebeam_client {
+    bytebeam_device_info_t device_info;
     bytebeam_device_config_t device_cfg;
     bytebeam_client_handle_t client;
     bytebeam_client_config_t mqtt_cfg;
