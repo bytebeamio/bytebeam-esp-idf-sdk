@@ -119,6 +119,13 @@ void app_main(void)
     // sync time from the ntp
     sync_time_from_ntp();
 
+    // setting up the device info i.e to be seen in the device shadow
+    bytebeam_client.device_info.status           = "Device is Up!";
+    bytebeam_client.device_info.software_type    = "setup-client-app";
+    bytebeam_client.device_info.software_version = "1.0.0";
+    bytebeam_client.device_info.hardware_type    = "ESP32 DevKit V1";
+    bytebeam_client.device_info.hardware_version = "rev1";
+
     // initialize the bytebeam client
     bytebeam_init(&bytebeam_client);
 
