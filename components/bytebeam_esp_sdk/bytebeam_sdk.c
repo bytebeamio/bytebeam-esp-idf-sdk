@@ -15,11 +15,11 @@
 #include "esp_sntp.h"
 #include "esp_timer.h"
 
-cJSON *cert_json = NULL;
-
 char *ota_action_id = "";
-static int function_handler_index = 0;
+char ota_error_str[BYTEBEAM_OTA_ERROR_STR_LEN] = "";
 
+static int function_handler_index = 0;
+static cJSON * bytebeam_cert_json = NULL;
 static bytebeam_client_t *bytebeam_log_client = NULL;
 static char bytebeam_log_stream[BYTEBEAM_LOG_STREAM_STR_LEN] = "logs";
 static bytebeam_log_level_t bytebeam_log_level = BYTEBEAM_LOG_LEVEL_NONE;
@@ -130,21 +130,21 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
 
     const char *json_file = (const char *)device_config_data;
 
-    /*  Do not delete the cert json object from memory because we are giving the reference of the certificates to the mqtt
+    /*  Do not delete the bytebeam cert json object from memory because we are giving the reference of the certificates to the mqtt
      *  library (see below), so it needs to be there in the memory. Ofcourse we will delete the json object to release the
      *  memory and that is handled properly in bytebeam sdk cleanup.
      */
 
-    cert_json = cJSON_Parse(json_file);
+    bytebeam_cert_json = cJSON_Parse(json_file);
 
-    if (cert_json == NULL) {
+    if (bytebeam_cert_json == NULL) {
         ESP_LOGE(TAG, "ERROR in parsing the JSON\n");
 
         free(device_config_data);
         return -1;
     }
 
-    cJSON *prj_id_obj = cJSON_GetObjectItem(cert_json, "project_id");
+    cJSON *prj_id_obj = cJSON_GetObjectItem(bytebeam_cert_json, "project_id");
 
     if (!(cJSON_IsString(prj_id_obj) && (prj_id_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR in getting the project id\n");
@@ -164,7 +164,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
         return -1;
     }
 
-    cJSON *broker_name_obj = cJSON_GetObjectItem(cert_json, "broker");
+    cJSON *broker_name_obj = cJSON_GetObjectItem(bytebeam_cert_json, "broker");
 
     if (!(cJSON_IsString(broker_name_obj) && (broker_name_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing broker name");
@@ -173,7 +173,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
         return -1;
     }
 
-    cJSON *port_num_obj = cJSON_GetObjectItem(cert_json, "port");
+    cJSON *port_num_obj = cJSON_GetObjectItem(bytebeam_cert_json, "port");
 
     if (!(cJSON_IsNumber(port_num_obj))) {
         ESP_LOGE(TAG, "ERROR parsing port number.");
@@ -205,7 +205,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
 #endif
 
-    cJSON *device_id_obj = cJSON_GetObjectItem(cert_json, "device_id");
+    cJSON *device_id_obj = cJSON_GetObjectItem(bytebeam_cert_json, "device_id");
 
     if (!(cJSON_IsString(device_id_obj) && (device_id_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing device id\n");
@@ -225,9 +225,9 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
         return -1;
     }
 
-    cJSON *auth_obj = cJSON_GetObjectItem(cert_json, "authentication");
+    cJSON *auth_obj = cJSON_GetObjectItem(bytebeam_cert_json, "authentication");
 
-    if (cert_json == NULL || !(cJSON_IsObject(auth_obj))) {
+    if (bytebeam_cert_json == NULL || !(cJSON_IsObject(auth_obj))) {
         ESP_LOGE(TAG, "ERROR in parsing the auth JSON\n");
 
         free(device_config_data);
@@ -334,9 +334,9 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
     bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_NONE);
 
     // clearing certifciate json object
-    if(cert_json != NULL) {
-        cJSON_Delete(cert_json);
-        cert_json = NULL;
+    if(bytebeam_cert_json != NULL) {
+        cJSON_Delete(bytebeam_cert_json);
+        bytebeam_cert_json = NULL;
         ESP_LOGD(TAG, "Certificate JSON object deleted");
     }
 
@@ -1052,9 +1052,12 @@ int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char *ota_u
     } else {
         ESP_LOGE(TAG, "Firmware Upgrade Failed");
 
-        if ((bytebeam_publish_action_failed(bytebeam_client, action_id)) != 0) {
+        if ((bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", ota_error_str)) != 0) {
             ESP_LOGE(TAG, "Failed to publish negative response for Firmware upgrade failure");
         }
+
+        // clear the OTA error
+        memset(ota_error_str, 0x00, sizeof(ota_error_str));
 
         return -1;
     }

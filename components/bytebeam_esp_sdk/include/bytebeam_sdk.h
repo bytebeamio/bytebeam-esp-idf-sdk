@@ -21,14 +21,17 @@
 /*This macro is used to specify the maximum length of bytebeam project id string*/
 #define BYTEBEAM_PROJECT_ID_STR_LEN 100
 
+/*This macro is used to specify the maximum length of bytebeam mqtt topic string*/
+#define BYTEBEAM_MQTT_TOPIC_STR_LEN 200
+
 /*This macro is used to specify the maximum length of bytebeam action id string*/
 #define BYTEBEAM_ACTION_ID_STR_LEN 20
 
 /*This macro is used to specify the maximum length of bytebeam OTA url string*/
 #define BYTEBAM_OTA_URL_STR_LEN 200
 
-/*This macro is used to specify the maximum length of bytebeam mqtt topic string*/
-#define BYTEBEAM_MQTT_TOPIC_STR_LEN 200
+/*This macro is used to specify the maximum length of the bytebeam OTA error string*/
+#define BYTEBEAM_OTA_ERROR_STR_LEN 200
 
 /*This macro is used to specify the maximum number of actions that need to be handled for particular device*/
 #define BYTEBEAM_NUMBER_OF_ACTIONS 10

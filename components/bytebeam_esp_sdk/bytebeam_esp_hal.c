@@ -12,14 +12,10 @@
 #include "nvs_flash.h"
 #include "esp_system.h"
 
-/*This macro is used to specify the maximum length of OTA action id string including NULL Character*/
-#define OTA_ACTION_ID_STR_LEN 20
-
 static int ota_img_data_len = 0;
 static int ota_update_completed = 0;
-static char ota_action_id_str[OTA_ACTION_ID_STR_LEN];
-
-static bytebeam_client_t *bytebeam_ota_client;
+static char ota_action_id_str[BYTEBEAM_ACTION_ID_STR_LEN] = "";
+static bytebeam_client_t *ota_client = NULL;
 
 static const char *TAG_BYTE_BEAM_ESP_HAL = "BYTEBEAM_SDK";
 
@@ -84,7 +80,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             }
 
             // publish the OTA progress status
-            if(bytebeam_publish_action_status(bytebeam_ota_client, ota_action_id, update_progress_percent, update_progress_status, "") != 0) {
+            if(bytebeam_publish_action_status(ota_client, ota_action_id, update_progress_percent, update_progress_status, "") != 0) {
                 ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA progress status");
             }
 
@@ -137,21 +133,21 @@ esp_err_t _test_event_handler(esp_http_client_event_t *evt)
 int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
 {
     // set the ota client reference to the incoming bytebeam client
-    bytebeam_ota_client = bytebeam_client;
+    ota_client = bytebeam_client;
 
     esp_http_client_config_t config = {
         .url = ota_url,
-        .cert_pem = (char *)bytebeam_ota_client->device_cfg.ca_cert_pem,
-        .client_cert_pem = (char *)bytebeam_ota_client->device_cfg.client_cert_pem,
-        .client_key_pem = (char *)bytebeam_ota_client->device_cfg.client_key_pem,
+        .cert_pem = (char *)ota_client->device_cfg.ca_cert_pem,
+        .client_cert_pem = (char *)ota_client->device_cfg.client_cert_pem,
+        .client_key_pem = (char *)ota_client->device_cfg.client_key_pem,
         .event_handler = _http_event_handler,
     };
 
     esp_http_client_config_t test_config = {
         .url = ota_url,
-        .cert_pem = (char *)bytebeam_ota_client->device_cfg.ca_cert_pem,
-        .client_cert_pem = (char *)bytebeam_ota_client->device_cfg.client_cert_pem,
-        .client_key_pem = (char *)bytebeam_ota_client->device_cfg.client_key_pem,
+        .cert_pem = (char *)ota_client->device_cfg.ca_cert_pem,
+        .client_cert_pem = (char *)ota_client->device_cfg.client_cert_pem,
+        .client_key_pem = (char *)ota_client->device_cfg.client_key_pem,
         .event_handler = _test_event_handler,
     };
 
@@ -176,13 +172,33 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
     ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "The URL is:%s", config.url);
 
 #ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
-    if ((esp_https_ota(&ota_config)) != ESP_OK) {
+    err = esp_https_ota(&ota_config);
+
+    if (err != ESP_OK) {
+        int max_len = BYTEBEAM_OTA_ERROR_STR_LEN;
+        int temp_var = snprintf(ota_error_str, max_len, "Error (%d): %s", err, esp_err_to_name(err));
+
+        if (temp_var >= max_len) {
+            ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "OTA error size exceeded buffer size");
+        }
+
+        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "HTTP_UPDATE_FAILED %s", ota_error_str);
         return -1;
     }
 #endif
 
 #ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
-    if ((esp_https_ota(&config)) != ESP_OK) {
+    err = esp_https_ota(&config);
+
+    if (err != ESP_OK) {
+        int max_len = BYTEBEAM_OTA_ERROR_STR_LEN;
+        int temp_var = snprintf(ota_error_str, max_len, "Error (%d): %s", err, esp_err_to_name(err));
+
+        if (temp_var >= max_len) {
+            ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "OTA error size exceeded buffer size");
+        }
+
+        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "HTTP_UPDATE_FAILED %s", ota_error_str);
         return -1;
     }
 #endif
@@ -353,7 +369,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
                 return -1;
             }
 
-            int max_len = OTA_ACTION_ID_STR_LEN;
+            int max_len = BYTEBEAM_ACTION_ID_STR_LEN;
             int temp_var = snprintf(ota_action_id_str, max_len, "%d", (int)ota_action_id_val);
 
             if(temp_var >= max_len)

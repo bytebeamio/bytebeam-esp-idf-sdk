@@ -11,10 +11,12 @@ int bytebeam_hal_destroy(bytebeam_client_t *bytebeam_client);
 int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client);
 int bytebeam_hal_stop_mqtt(bytebeam_client_t *bytebeam_client);
 
-extern char *ota_action_id;
-
 int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client);
 int bytebeam_unsubscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client);
 int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t client, bytebeam_client_t *bytebeam_client);
 int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client);
+
+extern char *ota_action_id;
+extern char ota_error_str[];
+
 #endif /* BYTEBEAM_ESP_HAL_H */
