@@ -685,11 +685,10 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
     // publish the json to device shadow stream
     ret_val = bytebeam_publish_to_stream(bytebeam_client, "device_shadow", string_json);
 
-    if (ret_val != 0) {
-        return BB_FAILURE;
-    } else {
-        return BB_SUCCESS;
-    }
+    cJSON_Delete(device_shadow_json_list);
+    cJSON_free(string_json);
+
+    return ret_val;
 }
 
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
