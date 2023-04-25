@@ -19,65 +19,24 @@ char *ota_action_id = "";
 char ota_error_str[BYTEBEAM_OTA_ERROR_STR_LEN] = "";
 
 static int function_handler_index = 0;
-static cJSON * bytebeam_cert_json = NULL;
+static cJSON *bytebeam_cert_json = NULL;
+static char *bytebeam_device_config_data = NULL;
+
+// bytebeam log module variables
+static bool is_cloud_logging_enable = true;
 static bytebeam_client_t *bytebeam_log_client = NULL;
 static char bytebeam_log_stream[BYTEBEAM_LOG_STREAM_STR_LEN] = "logs";
 static bytebeam_log_level_t bytebeam_log_level = BYTEBEAM_LOG_LEVEL_NONE;
-static bool is_cloud_logging_enable = true;
 
 static const char *TAG = "BYTEBEAM_SDK";
 
-static char *utils_read_file(char *filename)
+static int read_device_config_file()
 {
-    FILE *file;
-
-    file = fopen(filename, "r");
-
-    if (file == NULL) 
-    {
-        ESP_LOGE(TAG, "Fialed to open device config file for reading");
-        return NULL;
-    }
-
-    fseek(file, 0, SEEK_END);
-    int file_length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    if(file_length <= 0)
-    {
-        ESP_LOGE(TAG, "Fialed to get device config file size");
-        return NULL;
-    }
-
-    // dynamically allocate a char array to store the file contents
-    char *buff = malloc(sizeof(char) * (file_length + 1));
-
-    if(buff == NULL)
-    {
-        ESP_LOGE(TAG, "Fialed to allocate the memory for device config file");
-        return NULL;
-    }
-
-    int temp_c;
-    int loop_var = 0;
-
-    while ((temp_c = fgetc(file)) != EOF)
-    {
-        buff[loop_var] = temp_c;
-        loop_var++;
-    }
-
-    buff[loop_var] = '\0';
-
-    fclose(file);
-
-    return buff;
-}
-
-static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_client_config_t *mqtt_cfg)
-{
+    char config_fname[100] = "";
     esp_err_t ret_code = ESP_OK;
-    char *config_fname = "/spiffs/device_config.json";
+
+#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
+    ESP_LOGI(TAG, "SPIFFS file system detected !");
 
     esp_vfs_spiffs_conf_t conf = {
         .base_path = "/spiffs",
@@ -86,40 +45,95 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
         .format_if_mount_failed = true
     };
 
+    // initalize the SPIFFS file system
     ret_code = esp_vfs_spiffs_register(&conf);
 
     if (ret_code != ESP_OK)
     {
-        if (ret_code == ESP_FAIL)
+        switch(ret_code)
         {
-            ESP_LOGE(TAG, "Failed to mount or format filesystem");
-        } 
-        else if (ret_code == ESP_ERR_NOT_FOUND) {
-            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
-        }
-        else {
-            ESP_LOGE(TAG, "Failed to register SPIFFS partition");
+            case ESP_FAIL:
+                ESP_LOGE(TAG, "Failed to mount or format filesystem");
+                break;
+
+            case ESP_ERR_NOT_FOUND:
+                ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+                break;
+
+            default:
+                ESP_LOGE(TAG, "Failed to register SPIFFS partition");
         }
 
         return -1;
     }
 
-    char *device_config_data = utils_read_file(config_fname);
+    // generate the device config file name
+    strcat(config_fname, "/spiffs/");
+    strcat(config_fname, CONFIG_BYTEBEAM_PROVISIONING_FILENAME);
+#endif
 
-    if (device_config_data == NULL) {
-        ESP_LOGE(TAG, "Error in fetching Config data from FLASH");
+#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_LITTLEFS
+    ESP_LOGI(TAG, "LITTLEFS file system detected !");
 
-        ret_code = esp_vfs_spiffs_unregister(conf.partition_label);
+    // Just print the log and return :)
+    ESP_LOGI(TAG, "LITTLEFS file system is not supported by the sdk yet :)");
+    return -1;
+#endif
 
-        if (ret_code != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Failed to unregister SPIFFS partition");
-        }
+#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_FATFS
+    ESP_LOGI(TAG, "FATFS file system detected !");
 
-        free(device_config_data);
+    // Just print the log and return :)
+    ESP_LOGI(TAG, "FATFS file system is not supported by the sdk yet :)");
+    return -1;
+#endif
+
+    const char* path = config_fname;
+    ESP_LOGI(TAG, "Reading file : %s", path);
+
+    FILE *file = fopen(path, "r");
+
+    if (file == NULL) 
+    {
+        ESP_LOGE(TAG, "Failed to open device config file for reading");
         return -1;
     }
 
+    fseek(file, 0, SEEK_END);
+    int file_length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    if(file_length <= 0)
+    {
+        ESP_LOGE(TAG, "Failed to get device config file size");
+        return -1;
+    }
+
+    // dynamically allocate a char array to store the file contents
+    bytebeam_device_config_data = malloc(sizeof(char) * (file_length + 1));
+
+    // if memory allocation fails just log the failure to serial and return :)
+    if(bytebeam_device_config_data == NULL)
+    {
+        ESP_LOGE(TAG, "Failed to allocate the memory for device config file");
+        return -1;
+    }
+
+    int temp_c;
+    int loop_var = 0;
+
+    while ((temp_c = fgetc(file)) != EOF)
+    {
+        bytebeam_device_config_data[loop_var] = temp_c;
+        loop_var++;
+    }
+
+    bytebeam_device_config_data[loop_var] = '\0';
+
+    fclose(file);
+
+#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
+    // de-initalize the SPIFFS file system
     ret_code = esp_vfs_spiffs_unregister(conf.partition_label);
 
     if (ret_code != ESP_OK)
@@ -127,8 +141,33 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
         ESP_LOGE(TAG, "Failed to unregister SPIFFS partition");
         return -1;
     }
+#endif
 
-    const char *json_file = (const char *)device_config_data;
+#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_LITTLEFS
+    // de-initalize the LITTLEFS file system
+    // nothing to do here yet
+
+#endif
+
+#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_FATFS
+    // de-initalize the FATFS file system
+    // nothing to do here yet
+
+#endif
+
+    return 0;
+}
+
+static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_client_config_t *mqtt_cfg)
+{
+    // before going ahead make sure you are parsing something
+    if (bytebeam_device_config_data == NULL) {
+        ESP_LOGE(TAG, "device config file is empty");
+        return -1;
+    }
+
+    // refer to json file to the device config data
+    const char *json_file = (const char *)bytebeam_device_config_data;
 
     /*  Do not delete the bytebeam cert json object from memory because we are giving the reference of the certificates to the mqtt
      *  library (see below), so it needs to be there in the memory. Ofcourse we will delete the json object to release the
@@ -140,7 +179,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     if (bytebeam_cert_json == NULL) {
         ESP_LOGE(TAG, "ERROR in parsing the JSON\n");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -149,7 +188,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     if (!(cJSON_IsString(prj_id_obj) && (prj_id_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR in getting the project id\n");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -160,7 +199,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     {   
         ESP_LOGE(TAG, "Project Id length exceeded buffer size");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -169,7 +208,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     if (!(cJSON_IsString(broker_name_obj) && (broker_name_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing broker name");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -178,7 +217,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     if (!(cJSON_IsNumber(port_num_obj))) {
         ESP_LOGE(TAG, "ERROR parsing port number.");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -191,7 +230,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     {
         ESP_LOGE(TAG, "Broker URL length exceeded buffer size");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -210,7 +249,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     if (!(cJSON_IsString(device_id_obj) && (device_id_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing device id\n");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
     
@@ -221,7 +260,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     {
         ESP_LOGE(TAG, "Device Id length exceeded buffer size");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -230,7 +269,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     if (bytebeam_cert_json == NULL || !(cJSON_IsObject(auth_obj))) {
         ESP_LOGE(TAG, "ERROR in parsing the auth JSON\n");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -239,7 +278,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     if (!(cJSON_IsString(ca_cert_obj) && (ca_cert_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing ca certificate\n");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -258,7 +297,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     if (!(cJSON_IsString(device_cert_obj) && (device_cert_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing device certifate\n");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -277,7 +316,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     if (!(cJSON_IsString(device_private_key_obj) && (device_private_key_obj->valuestring != NULL))) {
         ESP_LOGE(TAG, "ERROR parsing device private key\n");
 
-        free(device_config_data);
+        free(bytebeam_device_config_data);
         return -1;
     }
 
@@ -291,7 +330,8 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     mqtt_cfg->client_key_pem = (const char *)device_cfg->client_key_pem;
 #endif
 
-    free(device_config_data);
+    free(bytebeam_device_config_data);
+    bytebeam_device_config_data = NULL;
 
     return 0;
 }
@@ -695,24 +735,35 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
     
-    // parse the device config json stored in file system
-    ret_val = parse_device_config_file(&(bytebeam_client->device_cfg), &(bytebeam_client->mqtt_cfg));
+    // read the device config json stored in file system
+    ret_val = read_device_config_file();
 
-    if (ret_val != 0) {
-        ESP_LOGE(TAG, "Bytebeam Client init failed due to error in parsing device config JSON");
+    if(ret_val != 0) {
+        ESP_LOGE(TAG, "Error in reading device config JSON");
 
-        /* This call will clearing all the bytebeam sdk variables so to avoid any memory leaks further */
+        /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
         bytebeam_sdk_cleanup(bytebeam_client);
         return BB_FAILURE;
     }
 
-    // initialize the bytebeam hal
+    // parse the device config json readed from the file system
+    ret_val = parse_device_config_file(&(bytebeam_client->device_cfg), &(bytebeam_client->mqtt_cfg));
+
+    if (ret_val != 0) {
+        ESP_LOGE(TAG, "Error in parsing device config JSON");
+
+        /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
+        bytebeam_sdk_cleanup(bytebeam_client);
+        return BB_FAILURE;
+    }
+
+    // initialize the bytebeam hal layer
     ret_val = bytebeam_hal_init(bytebeam_client);
 
     if (ret_val != 0) {
-        ESP_LOGE(TAG, "Bytebeam Client init failed");
+        ESP_LOGE(TAG, "Error in initializing bytebeam hal");
 
-        /* This call will clearing all the bytebeam sdk variables so to avoid any memory leaks further */
+        /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
         bytebeam_sdk_cleanup(bytebeam_client);
         return BB_FAILURE;
     }
@@ -720,7 +771,7 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
     bytebeam_log_client_set(bytebeam_client);
     bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL);
 
-    ESP_LOGI(TAG, "Bytebeam Client initialized !!");
+    ESP_LOGI(TAG, "Bytebeam Client Initialized !!");
 
     return BB_SUCCESS;
 }
