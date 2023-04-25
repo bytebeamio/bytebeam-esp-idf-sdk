@@ -1,0 +1,30 @@
+menu "Bytebeam"
+
+    choice BYTEBEAM_PROVISIONING_FILESYSTEM
+        prompt "Provisioning file system"
+        default BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
+        help
+            Select the file system for the device provisioning
+
+        config BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
+            bool "SPIFFS"
+            help
+                Use spiffs file system for device provisioning
+
+        config BYTEBEAM_PROVISION_DEVICE_FROM_LITTLEFS
+            bool "LITTLEFS"
+            help
+                Use littlefs file system for device provisioning
+
+        config BYTEBEAM_PROVISION_DEVICE_FROM_FATFS
+            bool "FATFS"
+            help
+                Use fatfs file system for device provisioning
+    endchoice
+    
+    config BYTEBEAM_PROVISIONING_FILENAME
+        string "Provisioning file name"
+        default "device_config.json"
+        help
+            Provide the file name for the device provisioning
+endmenu
