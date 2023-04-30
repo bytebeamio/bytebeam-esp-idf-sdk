@@ -21,6 +21,7 @@ char ota_error_str[BYTEBEAM_OTA_ERROR_STR_LEN] = "";
 static int function_handler_index = 0;
 static cJSON *bytebeam_cert_json = NULL;
 static char *bytebeam_device_config_data = NULL;
+static char bytebeam_last_known_action_id[BYTEBEAM_ACTION_ID_STR_LEN] = { 0 };
 
 // bytebeam log module variables
 static bool is_cloud_logging_enable = true;
@@ -483,6 +484,17 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
         return -1;
     }
 
+    int32_t action_id_val = (int32_t)(atoi(action_id));
+    int32_t last_known_action_id_val = (int32_t)(atoi(bytebeam_last_known_action_id));
+
+    ESP_LOGD(TAG, "action_id_val : %ld, last_known_action_id_val : %ld\n",action_id_val, last_known_action_id_val);
+
+    // just ignore the previous actions if triggered again
+    if (action_id_val <= last_known_action_id_val) {
+        ESP_LOGE(TAG, "Ignoring %s Action\n", name->valuestring);
+        return 0;
+    }
+
     payload = cJSON_GetObjectItem(root, "payload");
 
     if (cJSON_IsString(payload) && (payload->valuestring != NULL)) {
@@ -499,7 +511,13 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
 
         if (bytebeam_client->action_funcs[action_iterator].name == NULL) {
             ESP_LOGI(TAG, "Invalid action:%s\n", name->valuestring);
+
+            // publish action failed response indicating unregistered action
+            bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", "Unregistered Action");
         }
+
+        // update the last known action id
+        strcpy(bytebeam_last_known_action_id, action_id);
     } else {
         ESP_LOGE(TAG, "Error fetching payload");
 
