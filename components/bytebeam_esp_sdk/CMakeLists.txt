@@ -6,4 +6,5 @@ idf_component_register(SRCS "bytebeam_sdk.c" "bytebeam_esp_hal.c"
                                      "esp_https_ota"
                                      "app_update"
                                      "spiffs"
+                                     "fatfs"
                                      "esp_timer")

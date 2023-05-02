@@ -11,6 +11,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_spiffs.h"
+#include "esp_vfs_fat.h"
 
 #include "esp_sntp.h"
 #include "esp_timer.h"
@@ -54,15 +55,15 @@ static int read_device_config_file()
         switch(ret_code)
         {
             case ESP_FAIL:
-                ESP_LOGE(TAG, "Failed to mount or format filesystem");
+                ESP_LOGE(TAG, "Failed to mount or format SPIFFS");
                 break;
 
             case ESP_ERR_NOT_FOUND:
-                ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+                ESP_LOGE(TAG, "Unable to find SPIFFS partition");
                 break;
 
             default:
-                ESP_LOGE(TAG, "Failed to register SPIFFS partition");
+                ESP_LOGE(TAG, "Failed to register SPIFFS partition (%s)", esp_err_to_name(ret_code));
         }
 
         return -1;
@@ -84,9 +85,37 @@ static int read_device_config_file()
 #if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_FATFS
     ESP_LOGI(TAG, "FATFS file system detected !");
 
-    // Just print the log and return :)
-    ESP_LOGI(TAG, "FATFS file system is not supported by the sdk yet :)");
-    return -1;
+    const esp_vfs_fat_mount_config_t conf = {
+            .max_files = 4,
+            .format_if_mount_failed = false,
+            .allocation_unit_size = CONFIG_WL_SECTOR_SIZE
+    };
+
+    // initalize the FATFS file system
+    ret_code = esp_vfs_fat_spiflash_mount_ro("/spiflash", "storage", &conf);
+
+    if (ret_code != ESP_OK)
+    {
+        switch(ret_code)
+        {
+            case ESP_FAIL:
+                ESP_LOGE(TAG, "Failed to mount FATFS");
+                break;
+
+            case ESP_ERR_NOT_FOUND:
+                ESP_LOGE(TAG, "Unable to find FATFS partition");
+                break;
+
+            default:
+                ESP_LOGE(TAG, "Failed to register FATFS (%s)", esp_err_to_name(ret_code));
+        }
+
+        return -1;
+    }
+
+    // generate the device config file name
+    strcat(config_fname, "/spiflash/");
+    strcat(config_fname, CONFIG_BYTEBEAM_PROVISIONING_FILENAME);
 #endif
 
     const char* path = config_fname;
@@ -139,7 +168,7 @@ static int read_device_config_file()
 
     if (ret_code != ESP_OK)
     {
-        ESP_LOGE(TAG, "Failed to unregister SPIFFS partition");
+        ESP_LOGE(TAG, "Failed to unregister SPIFFS (%s)", esp_err_to_name(ret_code));
         return -1;
     }
 #endif
@@ -152,8 +181,13 @@ static int read_device_config_file()
 
 #if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_FATFS
     // de-initalize the FATFS file system
-    // nothing to do here yet
+    ret_code = esp_vfs_fat_spiflash_unmount_ro("/spiflash", "storage");
 
+    if (ret_code != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to unregister FATFS (%s)", esp_err_to_name(ret_code));
+        return -1;
+    }
 #endif
 
     return 0;
