@@ -1,0 +1,123 @@
+name: Issue report
+description: Report any problem here
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    id: thanks-message
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this issue report!
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Answers checklist
+      description: Before submitting a new issue, please follow the checklist and try to find the answer.
+      options:
+        - label: I have read the documentation [Bytebeam ESP-IDF Docs](https://docs.bytebeam.io/docs/esp-idf) and the issue is not addressed there.
+          required: true
+        - label: I have gone through [Existing Isssues](https://github.com/bytebeamio/bytebeam-esp-idf-sdk/issues) for a similar issue and not found a similar issue.
+          required: true
+  - type: input
+    id: board
+    attributes:
+      label: Board
+      description: On which Board does this issue occur?
+      placeholder: eg. ESP32 Dev Module, ESP32-S2, ESP32-C3...
+    validations:
+      required: true
+  - type: textarea
+    id: devboard
+    attributes:
+      label: Device Description
+      description: What development board or other hardware is the chip attached to?
+      placeholder: ex. DevKitC, plain module on breadboard, etc. If your hardware is custom or unusual, please attach a photo.
+    validations:
+       required: true
+  - type: textarea
+    id: other-hw
+    attributes:
+      label: Hardware Configuration
+      description: Is anything else attached to the development board?
+      placeholder: ex. GPIO 18 & 19 are connected to I2C devices.
+    validations:
+      required: true
+  - type: input
+    id: esp-idf-version
+    attributes:
+      label: ESP-IDF Version
+      description: What version of ESP-IDF are you running? If possible, consider updating to the latest version.
+    validations:
+      required: true
+  - type: dropdown
+    id: bytebeam-esp-idf-sdk-version
+    attributes:
+      label: Bytebeam ESP-IDF SDK Version
+      description: What version of Bytebeam ESP-IDF SDK are you running? If possible, consider updating to the latest version.
+      options:
+        - latest main (checkout manually)
+    validations:
+      required: true
+  - type: dropdown
+    id: build-process
+    attributes:
+     label: Build Process
+     description: How did you build your project?
+     options:
+        - Command line with Make
+        - Command line with CMake
+        - Command line with idf.py
+        - Espressif IDE
+        - VS Code IDE
+        - CLion IDE
+        - Eclipse IDE
+        - Other (please specify in More Information)
+    validations:
+     required: true
+  - type: input
+    id: host-os
+    attributes:
+      label: Operating System
+      description: On which OS does this issue occur?
+      placeholder: ex. macOS 12.1, Windows 10...
+    validations:
+      required: true
+  - type: textarea
+    id: problem-escription
+    attributes:
+      label: Problem Description
+      description: Please describe your problem here and expected behaviour
+      placeholder: ex. Can't connect/weird behaviour/wrong function/missing parameter..
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Code
+      description: Please provide full minimal app/code which can be run to reproduce your issue
+      placeholder: ex. Related part of the code to replicate the issue
+      render: cpp
+    validations:
+     required: true
+  - type: textarea
+    id: debug
+    attributes:
+      label: Debug Message
+      description: Please provide a debug message or error message. It should contain the backtrace, as well as the reset source if it is a crash
+      placeholder: Enable SDK debug level - Use ESP_LOG_DEBUG in esp_log_level_set(), then put the serial output here.
+      render: plain
+    validations:
+      required: true      
+  - type: textarea
+    id: other-remarks
+    attributes:
+      label: More Information 
+      description: Is there any other information you can think of which will help us reproduce this problem? Any additional info can be added as well.
+      placeholder: ex. I also tried on other OS, HW...it works correctly on that setup.
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: I have checked existing issues, online documentation and the Troubleshooting Guide
+      description: You agree to check all the resources above before opening a new issue.
+      options:
+        - label: I confirm I have checked existing issues and online documentation.
+          required: true
