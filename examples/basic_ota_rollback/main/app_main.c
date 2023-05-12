@@ -41,7 +41,7 @@ static const char *fw_version = APP_FIRMWARE_VERSION;
 
 static bytebeam_client_t bytebeam_client;
 
-static const char *TAG = "BYTEBEAM_BASIC_OTA_WITH_ROLLBACK_EXAMPLE";
+static const char *TAG = "BYTEBEAM_BASIC_OTA_ROLLBACK_EXAMPLE";
 
 static void app_start(bytebeam_client_t *bytebeam_client)
 {
@@ -109,6 +109,9 @@ static bool diagnostic(void)
     // your checkpoint will go here i.e (cloud connection status)
     bool diagnostic_is_ok = bytebeam_client.connection_status;
 
+    // force application rollback
+    diagnostic_is_ok = false;
+
     return diagnostic_is_ok;
 }
 
@@ -139,7 +142,7 @@ void app_main(void)
 
     // setting up the device info i.e to be seen in the device shadow
     bytebeam_client.device_info.status           = "Device is Up!";
-    bytebeam_client.device_info.software_type    = "basic-ota-app";
+    bytebeam_client.device_info.software_type    = "basic-ota-rollback-app";
     bytebeam_client.device_info.software_version = fw_version;
     bytebeam_client.device_info.hardware_type    = "ESP32 DevKit V1";
     bytebeam_client.device_info.hardware_version = "rev1";

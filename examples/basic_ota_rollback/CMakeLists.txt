@@ -8,4 +8,4 @@ set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_exam
                          ../../components)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(bytebeam_basic_ota_with_rollback_example)
+project(bytebeam_basic_ota_rollback_example)
