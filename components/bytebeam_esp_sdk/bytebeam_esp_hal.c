@@ -11,6 +11,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_system.h"
+#include "esp_idf_version.h"
 
 static int ota_img_data_len = 0;
 static int ota_update_completed = 0;
@@ -104,7 +105,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_DISCONNECTED");
         break;
 	
-#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     case HTTP_EVENT_REDIRECT:
         ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_REDIRECT");
         break;
@@ -151,7 +152,7 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
         .event_handler = _test_event_handler,
     };
 
-#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 	esp_https_ota_config_t ota_config = {
         .http_config = &config,
     };
@@ -171,7 +172,7 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
     esp_http_client_cleanup(client);
     ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "The URL is:%s", config.url);
 
-#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     err = esp_https_ota(&ota_config);
 
     if (err != ESP_OK) {
@@ -185,9 +186,7 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
         ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "HTTP_UPDATE_FAILED %s", ota_error_str);
         return -1;
     }
-#endif
-
-#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+#else
     err = esp_https_ota(&config);
 
     if (err != ESP_OK) {

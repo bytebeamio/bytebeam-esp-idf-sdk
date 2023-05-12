@@ -15,6 +15,7 @@
 
 #include "esp_sntp.h"
 #include "esp_timer.h"
+#include "esp_idf_version.h"
 
 char *ota_action_id = "";
 char ota_error_str[BYTEBEAM_OTA_ERROR_STR_LEN] = "";
@@ -269,12 +270,10 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
         return -1;
     }
 
-#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     mqtt_cfg->broker.address.uri = device_cfg->broker_uri;
     ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->broker.address.uri);
-#endif
-
-#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+#else
     mqtt_cfg->uri = device_cfg->broker_uri;
     ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
 #endif
@@ -319,11 +318,9 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
 
     device_cfg->ca_cert_pem = (char *)ca_cert_obj->valuestring;
 
-#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     mqtt_cfg->broker.verification.certificate = (const char *)device_cfg->ca_cert_pem;
-#endif
-
-#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+#else
     mqtt_cfg->cert_pem = (const char *)device_cfg->ca_cert_pem;
 #endif
 
@@ -338,11 +335,9 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
 
     device_cfg->client_cert_pem = (char *)device_cert_obj->valuestring;
 
-#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     mqtt_cfg->credentials.authentication.certificate = (const char *)device_cfg->client_cert_pem;
-#endif
-
-#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+#else
     mqtt_cfg->client_cert_pem = (const char *)device_cfg->client_cert_pem;
 #endif
 
@@ -357,11 +352,9 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
 
     device_cfg->client_key_pem = (char *)device_private_key_obj->valuestring;
 
-#ifdef BYTEBEAM_ESP_IDF_VERSION_5_0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     mqtt_cfg->credentials.authentication.key = (const char *)device_cfg->client_key_pem;
-#endif
-
-#ifdef BYTEBEAM_ESP_IDF_VERSION_4_4_3
+#else
     mqtt_cfg->client_key_pem = (const char *)device_cfg->client_key_pem;
 #endif
 
@@ -518,10 +511,10 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
         return -1;
     }
 
-    int32_t action_id_val = (int32_t)(atoi(action_id));
-    int32_t last_known_action_id_val = (int32_t)(atoi(bytebeam_last_known_action_id));
+    int action_id_val = atoi(action_id);
+    int last_known_action_id_val = atoi(bytebeam_last_known_action_id);
 
-    ESP_LOGD(TAG, "action_id_val : %ld, last_known_action_id_val : %ld\n",action_id_val, last_known_action_id_val);
+    ESP_LOGD(TAG, "action_id_val : %d, last_known_action_id_val : %d\n",action_id_val, last_known_action_id_val);
 
     // just ignore the previous actions if triggered again
     if (action_id_val <= last_known_action_id_val) {
