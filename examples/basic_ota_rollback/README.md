@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
-# Bytebeam Basic OTA With Rollback Example
+# Bytebeam Basic OTA Rollback Example
 This example demonnstrates how to rollback over the air firmware upgrades from Bytebeam IoT Platform.
 
 ## Hardware Required

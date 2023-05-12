@@ -41,7 +41,7 @@ static char device_shadow_stream[] = "device_shadow";
 
 static bytebeam_client_t bytebeam_client;
 
-static const char *TAG = "BYTEBEAM_TOGGLE_LED_EXAMPLE";
+static const char *TAG = "BYTEBEAM_PUSH_DATA_EXAMPLE";
 
 static void set_device_status(void)
 {

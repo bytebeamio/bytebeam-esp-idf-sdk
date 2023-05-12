@@ -43,8 +43,8 @@
 
 #include "bytebeam_sdk.h"
 
-// this macro is used to specify the delay for 1 sec.
-#define APP_DELAY_ONE_SEC 1000u
+// this macro is used to specify the delay for 10 sec.
+#define APP_DELAY_TEN_SEC 10000u
 
 // this macro is used to specify the touch pad channel i.e ( gpio 2 )
 #define TOUCH_PAD TOUCH_PAD_NUM2
@@ -52,7 +52,7 @@
 // this macro is used to specify the touch pad threshold
 #define TOUCH_THRESH_NO_USE 0
 
-static int config_publish_period = APP_DELAY_ONE_SEC;
+static int config_publish_period = APP_DELAY_TEN_SEC;
 
 static char esp_touch_stream[] = "esp_touch";
 

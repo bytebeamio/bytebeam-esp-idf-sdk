@@ -35,10 +35,10 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 ## Example Output
 
 ```
-I (5673) BYTEBEAM_TOGGLE_LED_EXAMPLE: Initializing SNTP
-I (5683) BYTEBEAM_TOGGLE_LED_EXAMPLE: Waiting for system time to be set... (1/10)
-I (7693) BYTEBEAM_TOGGLE_LED_EXAMPLE: Waiting for system time to be set... (2/10)
-W (9263) wifi:I (9273) BYTEBEAM_TOGGLE_LED_EXAMPLE: Notification of a time synchronization event
+I (5673) BYTEBEAM_PUSH_DATA_EXAMPLE: Initializing SNTP
+I (5683) BYTEBEAM_PUSH_DATA_EXAMPLE: Waiting for system time to be set... (1/10)
+I (7693) BYTEBEAM_PUSH_DATA_EXAMPLE: Waiting for system time to be set... (2/10)
+W (9263) wifi:I (9273) BYTEBEAM_PUSH_DATA_EXAMPLE: Notification of a time synchronization event
 <ba-add>idx:1 (ifx:0, 5c:8c:30:c2:24:39), tid:5, ssn:0, winSize:64
 I (9693) BYTEBEAM_SDK: SPIFFS file system detected !
 I (9713) BYTEBEAM_SDK: Reading file : /spiffs/device_config.json
@@ -77,7 +77,7 @@ I (11553) BYTEBEAM_SDK: sent publish successful, msg_id=64772, message:[{
                 "Hardware_Version":     "rev1"
         }]
 I (11573) BYTEBEAM_SDK: Bytebeam Client started !!
-I (11583) BYTEBEAM_TOGGLE_LED_EXAMPLE:
+I (11583) BYTEBEAM_PUSH_DATA_EXAMPLE:
 Status to send:
 [{
                 "timestamp":    1683887058275,
