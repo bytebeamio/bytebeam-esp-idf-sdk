@@ -11,4 +11,4 @@ This section includes some basic example app's to get you started with **bytebea
 - update_config
 - cloud_logging
 - basic_ota
-- basic_ota_with_rollback
+- basic_ota_rollback
