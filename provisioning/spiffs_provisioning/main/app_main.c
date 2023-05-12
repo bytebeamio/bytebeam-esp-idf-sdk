@@ -79,7 +79,7 @@ static int read_device_config_file(void)
         .format_if_mount_failed = true
     };
 
-    // initalize the FATFS file system
+    // initalize the SPIFFS file system
     ret_code = esp_vfs_spiffs_register(&conf);
 
     if (ret_code != ESP_OK)
@@ -104,18 +104,22 @@ static int read_device_config_file(void)
     // read the device config data
     char *device_config_data = utils_read_file(config_fname);
 
-    // de-initalize the FATFS file system
+    // de-initalize the SPIFFS file system
     ret_code = esp_vfs_spiffs_unregister(conf.partition_label);
 
     if(ret_code != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to unregister SPIFFS partition");
+
+        free(device_config_data);
         return BYTEBEAM_PROVISIONING_FAILURE;
     }
 
     if(device_config_data == NULL)
     {
         ESP_LOGE(TAG, "Error in fetching Config data from FLASH");
+
+        free(device_config_data);
         return BYTEBEAM_PROVISIONING_FAILURE;
     }
 

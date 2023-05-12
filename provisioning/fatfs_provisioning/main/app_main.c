@@ -21,9 +21,10 @@ static const char *TAG = "BYTEBEAM_PROVISIONING_EXAMPLE";
 
 static char *utils_read_file(char *filename)
 {
-    FILE *file;
+    const char* path = filename;
+    ESP_LOGI(TAG, "Reading file : %s", path);
 
-    file = fopen(filename, "r");
+    FILE *file = fopen(path, "r");
 
     if (file == NULL)
     {
@@ -77,6 +78,7 @@ static int read_device_config_file(void)
             .allocation_unit_size = CONFIG_WL_SECTOR_SIZE
     };
 
+    // initalize the FATFS file system
     ret_code = esp_vfs_fat_spiflash_mount_ro("/spiflash", "storage", &conf);
 
     if (ret_code != ESP_OK)
@@ -98,29 +100,25 @@ static int read_device_config_file(void)
         return BYTEBEAM_PROVISIONING_FAILURE;
     }
 
+    // read the device config data
     char *device_config_data = utils_read_file(config_fname);
 
-    if(device_config_data == NULL)
-    {
-        ESP_LOGE(TAG, "Error in fetching Config data from FLASH");
-
-        ret_code = esp_vfs_fat_spiflash_unmount_ro("/spiflash", "storage");
-
-        if (ret_code != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Failed to unregister FATFS (%s)", esp_err_to_name(ret_code));
-        }
-
-        free(device_config_data);
-
-        return BYTEBEAM_PROVISIONING_FAILURE;
-    }
-
+    // de-initalize the FATFS file system
     ret_code = esp_vfs_fat_spiflash_unmount_ro("/spiflash", "storage");
 
     if (ret_code != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to unregister FATFS (%s)", esp_err_to_name(ret_code));
+
+        free(device_config_data);
+        return BYTEBEAM_PROVISIONING_FAILURE;
+    }
+
+    if(device_config_data == NULL)
+    {   
+        ESP_LOGE(TAG, "Error in fetching Config data from FLASH");
+
+        free(device_config_data);
         return BYTEBEAM_PROVISIONING_FAILURE;
     }
 

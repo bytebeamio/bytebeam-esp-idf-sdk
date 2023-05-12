@@ -199,6 +199,8 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     // before going ahead make sure you are parsing something
     if (bytebeam_device_config_data == NULL) {
         ESP_LOGE(TAG, "device config file is empty");
+
+        free(bytebeam_device_config_data);
         return -1;
     }
 
