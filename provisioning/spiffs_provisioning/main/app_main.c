@@ -21,9 +21,10 @@ static const char *TAG = "BYTEBEAM_PROVISIONING_EXAMPLE";
 
 static char *utils_read_file(char *filename)
 {
-    FILE *file;
+    const char* path = filename;
+    ESP_LOGI(TAG, "Reading file : %s", path);
 
-    file = fopen(filename, "r");
+    FILE *file = fopen(path, "r");
 
     if (file == NULL)
     {
@@ -43,7 +44,7 @@ static char *utils_read_file(char *filename)
 
     // dynamically allocate a char array to store the file contents
     char *buff = (char *) malloc(sizeof(char) * (file_length + 1));
-
+    
     if(buff == NULL)
     {
         ESP_LOGE(TAG, "Fialed to allocate the memory for device config file");
@@ -78,49 +79,43 @@ static int read_device_config_file(void)
         .format_if_mount_failed = true
     };
 
+    // initalize the FATFS file system
     ret_code = esp_vfs_spiffs_register(&conf);
 
-    if(ret_code != ESP_OK)
+    if (ret_code != ESP_OK)
     {
-        if(ret_code == ESP_FAIL)
+        switch(ret_code)
         {
-            ESP_LOGE(TAG, "Failed to mount or format filesystem");
-        }
-        else if(ret_code == ESP_ERR_NOT_FOUND)
-        {
-            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
-        }
-        else
-        {
-            ESP_LOGE(TAG, "Failed to register SPIFFS partition");
+            case ESP_FAIL:
+                ESP_LOGE(TAG, "Failed to mount or format SPIFFS");
+                break;
+
+            case ESP_ERR_NOT_FOUND:
+                ESP_LOGE(TAG, "Unable to find SPIFFS partition");
+                break;
+
+            default:
+                ESP_LOGE(TAG, "Failed to register SPIFFS partition (%s)", esp_err_to_name(ret_code));
         }
 
         return BYTEBEAM_PROVISIONING_FAILURE;
     }
 
+    // read the device config data
     char *device_config_data = utils_read_file(config_fname);
 
-    if(device_config_data == NULL)
-    {
-        ESP_LOGE(TAG, "Error in fetching Config data from FLASH");
-
-        ret_code = esp_vfs_spiffs_unregister(conf.partition_label);
-
-        if (ret_code != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Failed to unregister SPIFFS partition");
-        }
-
-        free(device_config_data);
-
-        return BYTEBEAM_PROVISIONING_FAILURE;
-    }
-
+    // de-initalize the FATFS file system
     ret_code = esp_vfs_spiffs_unregister(conf.partition_label);
 
     if(ret_code != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to unregister SPIFFS partition");
+        return BYTEBEAM_PROVISIONING_FAILURE;
+    }
+
+    if(device_config_data == NULL)
+    {
+        ESP_LOGE(TAG, "Error in fetching Config data from FLASH");
         return BYTEBEAM_PROVISIONING_FAILURE;
     }
 
