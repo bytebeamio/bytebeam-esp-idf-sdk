@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+elf = "build/bytebeam_hello_wokwi_example.elf"
+firmware = "build/bytebeam_hello_wokwi_example.bin"

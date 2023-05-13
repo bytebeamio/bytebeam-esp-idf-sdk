@@ -12,3 +12,4 @@ This section includes some basic example app's to get you started with **bytebea
 - cloud_logging
 - basic_ota
 - basic_ota_rollback
+- hello_wokwi
