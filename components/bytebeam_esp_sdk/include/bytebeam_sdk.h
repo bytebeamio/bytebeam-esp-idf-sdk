@@ -147,6 +147,7 @@ typedef struct bytebeam_client {
     bytebeam_client_config_t mqtt_cfg;
     bytebeam_action_functions_map_t action_funcs[BYTEBEAM_NUMBER_OF_ACTIONS];
     int connection_status;
+    bool use_device_config_data;
 } bytebeam_client_t;
 
 /*Status codes propogated via functions*/

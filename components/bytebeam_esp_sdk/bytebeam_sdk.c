@@ -194,7 +194,7 @@ static int read_device_config_file()
     return 0;
 }
 
-static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebeam_client_config_t *mqtt_cfg)
+static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
 {
     // before going ahead make sure you are parsing something
     if (bytebeam_device_config_data == NULL) {
@@ -272,14 +272,6 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
         return -1;
     }
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-    mqtt_cfg->broker.address.uri = device_cfg->broker_uri;
-    ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->broker.address.uri);
-#else
-    mqtt_cfg->uri = device_cfg->broker_uri;
-    ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
-#endif
-
     cJSON *device_id_obj = cJSON_GetObjectItem(bytebeam_cert_json, "device_id");
 
     if (!(cJSON_IsString(device_id_obj) && (device_id_obj->valuestring != NULL))) {
@@ -320,12 +312,6 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
 
     device_cfg->ca_cert_pem = (char *)ca_cert_obj->valuestring;
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-    mqtt_cfg->broker.verification.certificate = (const char *)device_cfg->ca_cert_pem;
-#else
-    mqtt_cfg->cert_pem = (const char *)device_cfg->ca_cert_pem;
-#endif
-
     cJSON *device_cert_obj = cJSON_GetObjectItem(auth_obj, "device_certificate");
 
     if (!(cJSON_IsString(device_cert_obj) && (device_cert_obj->valuestring != NULL))) {
@@ -336,12 +322,6 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
     }
 
     device_cfg->client_cert_pem = (char *)device_cert_obj->valuestring;
-
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-    mqtt_cfg->credentials.authentication.certificate = (const char *)device_cfg->client_cert_pem;
-#else
-    mqtt_cfg->client_cert_pem = (const char *)device_cfg->client_cert_pem;
-#endif
 
     cJSON *device_private_key_obj = cJSON_GetObjectItem(auth_obj, "device_private_key");
 
@@ -354,16 +334,43 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg, bytebe
 
     device_cfg->client_key_pem = (char *)device_private_key_obj->valuestring;
 
+    free(bytebeam_device_config_data);
+    bytebeam_device_config_data = NULL;
+
+    return 0;
+}
+
+static void set_mqtt_conf(bytebeam_device_config_t *device_cfg, bytebeam_client_config_t *mqtt_cfg)
+{
+    // set the broker uri
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    mqtt_cfg->broker.address.uri = device_cfg->broker_uri;
+    ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->broker.address.uri);
+#else
+    mqtt_cfg->uri = device_cfg->broker_uri;
+    ESP_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
+#endif  
+
+    // set the server certificate
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    mqtt_cfg->broker.verification.certificate = (const char *)device_cfg->ca_cert_pem;
+#else
+    mqtt_cfg->cert_pem = (const char *)device_cfg->ca_cert_pem;
+#endif
+
+    // set the client certificate
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    mqtt_cfg->credentials.authentication.certificate = (const char *)device_cfg->client_cert_pem;
+#else
+    mqtt_cfg->client_cert_pem = (const char *)device_cfg->client_cert_pem;
+#endif
+
+    // set the client key
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     mqtt_cfg->credentials.authentication.key = (const char *)device_cfg->client_key_pem;
 #else
     mqtt_cfg->client_key_pem = (const char *)device_cfg->client_key_pem;
 #endif
-
-    free(bytebeam_device_config_data);
-    bytebeam_device_config_data = NULL;
-
-    return 0;
 }
 
 static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
@@ -782,27 +789,35 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
     
-    // read the device config json stored in file system
-    ret_val = read_device_config_file();
+    // check-in the device config data from file system if in case not provided 
+    if (bytebeam_client->use_device_config_data == false) {
+        // read the device config json stored in file system
+        ret_val = read_device_config_file();
 
-    if(ret_val != 0) {
-        ESP_LOGE(TAG, "Error in reading device config JSON");
+        if(ret_val != 0) {
+            ESP_LOGE(TAG, "Error in reading device config JSON");
 
-        /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
-        bytebeam_sdk_cleanup(bytebeam_client);
-        return BB_FAILURE;
+            /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
+            bytebeam_sdk_cleanup(bytebeam_client);
+            return BB_FAILURE;
+        }
+
+        // parse the device config json readed from the file system
+        ret_val = parse_device_config_file(&(bytebeam_client->device_cfg));
+
+        if (ret_val != 0) {
+            ESP_LOGE(TAG, "Error in parsing device config JSON");
+
+            /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
+            bytebeam_sdk_cleanup(bytebeam_client);
+            return BB_FAILURE;
+        }
+    } else {
+        ESP_LOGI(TAG, "Using provided device config data !");
     }
 
-    // parse the device config json readed from the file system
-    ret_val = parse_device_config_file(&(bytebeam_client->device_cfg), &(bytebeam_client->mqtt_cfg));
-
-    if (ret_val != 0) {
-        ESP_LOGE(TAG, "Error in parsing device config JSON");
-
-        /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
-        bytebeam_sdk_cleanup(bytebeam_client);
-        return BB_FAILURE;
-    }
+    // set the mqtt configurations
+    set_mqtt_conf(&(bytebeam_client->device_cfg), &(bytebeam_client->mqtt_cfg));
 
     // initialize the bytebeam hal layer
     ret_val = bytebeam_hal_init(bytebeam_client);
