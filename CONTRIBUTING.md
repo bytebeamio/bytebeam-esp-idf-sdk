@@ -1,8 +1,8 @@
-# Contributing to bytebeam-esp-sdk
+# Contributing to bytebeam-esp-idf-sdk
 
-If you have loved using bytebeam-esp-sdk and want to give back, we would love to have you open GitHub issues and PRs for features, bugs and documentation improvements.
+If you have loved using bytebeam-esp-idf-sdk and want to give back, we would love to have you open GitHub issues and PRs for features, bugs and documentation improvements.
 
-Before you start, please make yourself familiar with the architecture of bytebeam-esp-sdk and read the [design docs][design] before making your first contribution to increase it's chances of being adopted. Please follow the [Code of Conduct][coc] when communicating with other members of the community and keep discussions civil, we are excited to have you make your first of many contributiions to this repository, welcome!
+Before you start, please make yourself familiar with the architecture of bytebeam-esp-idf-sdk and read the [design docs][design] before making your first contribution to increase it's chances of being adopted. Please follow the [Code of Conduct][coc] when communicating with other members of the community and keep discussions civil, we are excited to have you make your first of many contributiions to this repository, welcome!
 
 ## Steps to Contribute
 
@@ -66,11 +66,11 @@ Tests Suite is not yet added to the repo, will add it once we are done with the 
 
 ## Add yourself to Contributors
 
-Thank you for contributing to bytebeam-esp-sdk, Please feel free to add yourself to [Contributors][contributors]
+Thank you for contributing to bytebeam-esp-idf-sdk, Please feel free to add yourself to [Contributors][contributors]
 
 ## License
 
-bytebeam-esp-sdk is licensed under the permissive [Apache License Version 2.0][license] and we accept contributions under the implied notion that they are made in complete renunciation of the contributors any rights or claims to the same after the code has been merged into the codebase.
+bytebeam-esp-idf-sdk is licensed under the permissive [Apache License Version 2.0][license] and we accept contributions under the implied notion that they are made in complete renunciation of the contributors any rights or claims to the same after the code has been merged into the codebase.
 
 [license]: LICENSE
 [design]: docs/design.md

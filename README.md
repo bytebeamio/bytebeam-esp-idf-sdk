@@ -1,7 +1,7 @@
-# bytebeam-esp-sdk
+# Bytebeam ESP IDF SDK
 
 <div>
-    <img alt="Bytebeam ESP SDK Logo" src="docs/logo.png" />
+    <img alt="Bytebeam ESP IDF SDK Logo" src="docs/logo.png" />
 </div>
 
 This SDK consist of components that can be used for connecting ESP devices to [Bytebeam](https://bytebeam.io/) IoT platform
@@ -15,8 +15,8 @@ This SDK consist of components that can be used for connecting ESP devices to [B
 ## What's included in the SDK :-
 
 - **components/bytebeam_esp_sdk** :-  This section contains source code for various functions that can be used by applications for interacting with Bytebeam platform. 
-- **example** :- This folder conatins demo application which demonstrates establishing secure connection with Bytebeam platform. Also, it demonstrates periodic data pushing and receiving actions.
-- **provisioning** :- This folder contains application for pushing device config data to SPIFFS of device.
+- **examples** :- This folder conatins demo application's which demonstrates establishing secure connection with Bytebeam platform. Also, it demonstrates periodic data pushing and receiving actions.
+- **provisioning** :- This folder contains application for pushing device config data to file system of device (say SPIFFS).
 
 ## Dependencies :-
 
