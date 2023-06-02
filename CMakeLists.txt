@@ -1,0 +1,15 @@
+idf_component_register(
+    INCLUDE_DIRS 
+        "include"    
+    SRCS 
+        "src/bytebeam_esp_hal.c" 
+        "src/bytebeam_sdk.c"             
+    PRIV_REQUIRES 
+        "json"
+        "mqtt"
+        "nvs_flash"
+        "esp_https_ota"
+        "app_update"
+        "spiffs"
+        "fatfs"
+        "esp_timer")
