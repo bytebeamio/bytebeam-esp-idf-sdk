@@ -1,6 +1,6 @@
 {
   "name": "bytebeam-esp-idf-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Application for connecting ESP devices to Bytebeam IoT platform",
   "keywords": "mqtt, http, iot, espressif32, bytebeam, device-management, ota-firmware-updates, cloud-logging",
   "license": "Apache-2.0",

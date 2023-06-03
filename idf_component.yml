@@ -1,4 +1,4 @@
-version: "1.0.0"
+version: "1.0.1"
 description: Application for connecting ESP devices to Bytebeam IoT platform
 maintainers:
   - Mayank Narang <https://github.com/mayankbytebeam>
