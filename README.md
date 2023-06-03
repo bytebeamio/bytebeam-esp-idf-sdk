@@ -4,6 +4,11 @@
     <img alt="Bytebeam ESP IDF SDK Logo" src="docs/logo.png" />
 </div>
 
+---
+
+[![Component Registry](https://components.espressif.com/components/bytebeamio/bytebeam-esp-idf-sdk/badge.svg)](https://components.espressif.com/components/bytebeamio/bytebeam-esp-idf-sdk)
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/bytebeamio/library/bytebeam-esp-idf-sdk.svg)](https://registry.platformio.org/libraries/bytebeamio/bytebeam-esp-idf-sdk)
+
 This SDK consist of components that can be used for connecting ESP devices to [Bytebeam](https://bytebeam.io/) IoT platform
 
 ## Features :-
