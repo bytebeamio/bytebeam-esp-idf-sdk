@@ -9,5 +9,3 @@ issues: https://github.com/bytebeamio/bytebeam-esp-idf-sdk/issues
 dependencies:
   idf:
     version: ">=4.4"
-examples:
-  - path: ./examples
