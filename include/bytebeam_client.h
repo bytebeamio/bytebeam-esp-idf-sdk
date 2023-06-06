@@ -143,14 +143,4 @@ bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client);
  */
 bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client);
 
-/**
- * @brief Publish response message after particular action is completed.
- *
- * @param[in] bytebeam_client bytebeam client handle
- * @param[in] action_id       action id for particular action
- * 
- * @return
- *      BB_SUCCESS : Message publish successful
- *      BB_FAILURE : Message publish failed
- */
 #endif /* BYTEBEAM_CLIENT_H */

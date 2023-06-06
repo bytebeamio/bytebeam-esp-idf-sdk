@@ -5,6 +5,7 @@ idf_component_register(
         "src/bytebeam_esp_hal.c"
         "src/bytebeam_client.c" 
         "src/bytebeam_log.c"
+        "src/bytebeam_actions.c"
         "src/bytebeam_sdk.c"             
     PRIV_REQUIRES 
         "json"
