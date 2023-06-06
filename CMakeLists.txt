@@ -1,13 +1,14 @@
 idf_component_register(
     INCLUDE_DIRS 
-        "include"    
+        "src/bytebeam_hal/bytebeam_esp_hal"
+        "src/bytebeam_sdk/include"
     SRCS 
-        "src/bytebeam_esp_hal.c"
-        "src/bytebeam_client.c" 
-        "src/bytebeam_log.c"
-        "src/bytebeam_actions.c"
-        "src/bytebeam_streams.c"
-        "src/bytebeam_ota.c"             
+        "src/bytebeam_hal/bytebeam_esp_hal/bytebeam_esp_hal.c"
+        "src/bytebeam_sdk/bytebeam_client.c" 
+        "src/bytebeam_sdk/bytebeam_log.c"
+        "src/bytebeam_sdk/bytebeam_actions.c"
+        "src/bytebeam_sdk/bytebeam_streams.c"
+        "src/bytebeam_sdk/bytebeam_ota.c"             
     PRIV_REQUIRES 
         "json"
         "mqtt"
