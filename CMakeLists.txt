@@ -2,7 +2,8 @@ idf_component_register(
     INCLUDE_DIRS 
         "include"    
     SRCS 
-        "src/bytebeam_esp_hal.c" 
+        "src/bytebeam_esp_hal.c"
+        "src/bytebeam_client.c" 
         "src/bytebeam_sdk.c"             
     PRIV_REQUIRES 
         "json"
