@@ -1,23 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <string.h>
-
-#include "esp_log.h"
 #include "cJSON.h"
-#include "bytebeam_sdk.h"
-#include "bytebeam_esp_hal.h"
+#include "esp_log.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-
-#include "esp_sntp.h"
-#include "esp_idf_version.h"
+#include "bytebeam_actions.h"
+#include "bytebeam_ota.h"
+#include "bytebeam_esp_hal.h"
 
 char *ota_action_id = "";
 char ota_error_str[BYTEBEAM_OTA_ERROR_STR_LEN] = "";
 
-static const char *TAG = "BYTEBEAM_SDK";
+static const char *TAG = "BYTEBEAM_OTA";
 
 int parse_ota_json(char *payload_string, char *url_string_return)
 {   

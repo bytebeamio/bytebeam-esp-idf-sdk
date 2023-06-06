@@ -7,7 +7,7 @@ idf_component_register(
         "src/bytebeam_log.c"
         "src/bytebeam_actions.c"
         "src/bytebeam_streams.c"
-        "src/bytebeam_sdk.c"             
+        "src/bytebeam_ota.c"             
     PRIV_REQUIRES 
         "json"
         "mqtt"
