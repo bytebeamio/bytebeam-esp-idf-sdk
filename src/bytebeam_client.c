@@ -4,10 +4,12 @@
 #include "esp_vfs_fat.h"
 #include "bytebeam_sdk.h"
 #include "bytebeam_esp_hal.h"
+#include "bytebeam_log.h"
 #include "bytebeam_client.h"
 
 static cJSON *bytebeam_cert_json = NULL;
 static char *bytebeam_device_config_data = NULL;
+
 static const char *TAG = "BYTEBEAM_CLIENT";
 
 static int read_device_config_file()
@@ -395,6 +397,7 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
     }
 
     ESP_LOGD(TAG, "Bytebeam SDK Cleanup done !!");
+
 }
 
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
@@ -442,8 +445,8 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
         return BB_FAILURE;
     }
 
-    // bytebeam_log_client_set(bytebeam_client);
-    // bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL);
+    bytebeam_log_client_set(bytebeam_client);
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL);
 
     ESP_LOGI(TAG, "Bytebeam Client Initialized !!");
 
