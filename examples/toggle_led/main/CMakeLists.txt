@@ -1,15 +1,13 @@
-idf_component_register(
-    INCLUDE_DIRS 
-        "."
-    SRCS 
-        "app_main.c"       
-    PRIV_REQUIRES
-        "json"
-        "mqtt"
-        "esp_wifi"	
-        "driver"
-        "nvs_flash"
-        "app_update"
-        "protocol_examples_common"
-        "esp_http_client"
-        "esp_https_ota")
+idf_component_register(SRCS "app_main.c" 
+                       INCLUDE_DIRS "."
+                       PRIV_REQUIRES "bytebeam_esp_sdk"
+									 "esp_wifi"	
+									 "driver"
+                                     "nvs_flash"
+                                     "app_update"
+                                     "mqtt"
+                                     "protocol_examples_common"
+                                     "esp_http_client"
+                                     "esp_https_ota"
+                                     "json"
+                                     "led_strip")
