@@ -28,6 +28,9 @@
 #include "cJSON.h"
 #include "driver/gpio.h"
 #include "bytebeam_sdk.h"
+#include "led_strip.h"
+#include "sdkconfig.h"
+
 
 // this macro is used to specify the delay for 1 sec.
 #define APP_DELAY_ONE_SEC 1000u
@@ -36,7 +39,7 @@
 #define LED_STATUS_STR_LEN 200
 
 // this macro is used to specify the gpio led for toggle led action
-#define TOGGLE_GPIO 2
+#define TOGGLE_GPIO CONFIG_BLINK_GPIO
 
 static int config_toggle_period = APP_DELAY_ONE_SEC;
 
@@ -50,6 +53,61 @@ static bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_TOGGLE_LED_EXAMPLE";
 
+
+#ifdef CONFIG_BLINK_LED_RMT
+
+static led_strip_handle_t led_strip;
+
+static void blink_led(int s_led_state)
+{
+    /* If the addressable LED is enabled */
+    if (s_led_state) {
+        /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
+        led_strip_set_pixel(led_strip, 0, 16, 16, 16);
+        /* Refresh the strip to send data */
+        led_strip_refresh(led_strip);
+    } else {
+        /* Set all LED off to clear all pixels */
+        led_strip_clear(led_strip);
+    }
+}
+
+static void configure_led(void)
+{
+    ESP_LOGI(TAG, "Example configured to blink addressable LED!");
+    /* LED strip initialization with the GPIO and pixels number*/
+    led_strip_config_t strip_config = {
+        .strip_gpio_num = TOGGLE_GPIO,
+        .max_leds = 1, // at least one LED on board
+    };
+    led_strip_rmt_config_t rmt_config = {
+        .resolution_hz = 10 * 1000 * 1000, // 10MHz
+    };
+    ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
+    /* Set all LED off to clear all pixels */
+    led_strip_clear(led_strip);
+}
+
+#elif CONFIG_BLINK_LED_GPIO
+
+static void blink_led(int s_led_state)
+{
+    /* Set the GPIO level according to the state (LOW or HIGH)*/
+    ESP_LOGI(TAG,"Setting GPIO:%d to pin:%d\n", s_led_state, TOGGLE_GPIO);
+    gpio_set_level(TOGGLE_GPIO, s_led_state);
+}
+
+static void configure_led(void)
+{
+    ESP_LOGI(TAG, "Example configured to blink GPIO LED!");
+    gpio_reset_pin(TOGGLE_GPIO);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(TOGGLE_GPIO, GPIO_MODE_OUTPUT);
+}
+
+#endif
+
+
 static void set_led_status(void)
 {
     int max_len = LED_STATUS_STR_LEN;
@@ -61,22 +119,17 @@ static void set_led_status(void)
     }
 }
 
+static led_strip_handle_t led_strip;
+
 static void toggle_led(void)
 {
     // toggle the gpio led state
     led_state = !led_state;
     ESP_LOGI(TAG, " LED_%s!", led_state == true ? "ON" : "OFF");
 
-    // set the gpio led level according to the state (low or high)
-    gpio_set_level(TOGGLE_GPIO, led_state);
+    blink_led(led_state);
 }
 
-static void configure_led(void)
-{
-    // set the gpio led pin as output
-    gpio_reset_pin(TOGGLE_GPIO);
-    gpio_set_direction(TOGGLE_GPIO, GPIO_MODE_OUTPUT);
-}
 
 static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 {   
@@ -267,8 +320,10 @@ int handle_toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *acti
     return 0;
 }
 
+
 void app_main(void)
 {
+    
     ESP_LOGI(TAG, "[APP] Startup..");
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", (int)esp_get_free_heap_size());
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
