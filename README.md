@@ -16,10 +16,12 @@ This SDK consist of components that can be used for connecting ESP devices to [B
 - Efficiently send data to cloud.
 - Receive commands from the cloud, execute them and update progress of execution.
 - Download Firmware images from cloud in case of OTA updates being triggered from cloud.
+- Update the device configurations from the cloud.
+- Remotely log the Usefull information to cloud.
 
 ## What's included in the SDK :-
 
-- **components/bytebeam_esp_sdk** :-  This section contains source code for various functions that can be used by applications for interacting with Bytebeam platform. 
+- **src** :-  This folder contains source code for various functions that can be used by applications for interacting with Bytebeam platform. 
 - **examples** :- This folder conatins demo application's which demonstrates establishing secure connection with Bytebeam platform. Also, it demonstrates periodic data pushing and receiving actions.
 - **provisioning** :- This folder contains application for pushing device config data to file system of device (say SPIFFS).
 
