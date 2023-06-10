@@ -16,6 +16,12 @@ This example demonnstrates how to control the led gpio from Bytebeam IoT Platfor
 
 Open the project configuration menu (`idf.py menuconfig`).
 
+In the `LED GPIO Configuration` menu:
+
+- Select the LED type in the Blink LED type option.
+  -  Use GPIO for regular LED blink.
+- Set the GPIO number used for the signal in the Blink GPIO number option.
+
 In the `Example Configuration` menu:
 
 - Set the Wi-Fi configuration.
