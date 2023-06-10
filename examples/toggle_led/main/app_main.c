@@ -41,7 +41,7 @@
 // this macro is used to specify the gpio led for toggle led action
 #define TOGGLE_GPIO CONFIG_BLINK_GPIO
 
-static int config_toggle_period = APP_DELAY_ONE_SEC;
+static int config_task_period = APP_DELAY_ONE_SEC;
 
 static uint32_t led_state = 0;
 static int toggle_led_cmd = 0;
@@ -52,7 +52,6 @@ static char device_shadow_stream[] = "device_shadow";
 static bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_TOGGLE_LED_EXAMPLE";
-
 
 #ifdef CONFIG_BLINK_LED_RMT
 
@@ -107,7 +106,6 @@ static void configure_led(void)
 
 #endif
 
-
 static void set_led_status(void)
 {
     int max_len = LED_STATUS_STR_LEN;
@@ -119,8 +117,6 @@ static void set_led_status(void)
     }
 }
 
-static led_strip_handle_t led_strip;
-
 static void toggle_led(void)
 {
     // toggle the gpio led state
@@ -129,7 +125,6 @@ static void toggle_led(void)
 
     blink_led(led_state);
 }
-
 
 static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 {   
@@ -256,7 +251,7 @@ static void app_start(bytebeam_client_t *bytebeam_client)
             toggle_led_cmd = 0;
         }
 
-        vTaskDelay(config_toggle_period / portTICK_PERIOD_MS);
+        vTaskDelay(config_task_period / portTICK_PERIOD_MS);
     }
 }
 

@@ -3,3 +3,4 @@ sdkconfig
 sdkconfig.old
 .vscode
 *.lock
+managed_components/
