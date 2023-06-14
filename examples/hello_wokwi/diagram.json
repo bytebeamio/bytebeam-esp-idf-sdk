@@ -1,6 +1,6 @@
 {
     "version": 1,
-    "author": "Benny Meisels",
+    "author": "Mayank Narang",
     "editor": "wokwi",
     "parts": [
       { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 4.7, "left": -5, "attrs": {} },
