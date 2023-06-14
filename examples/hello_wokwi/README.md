@@ -10,6 +10,11 @@ This example demonnstrates how integrate Wokwi with Bytebeam IoT Platform.
 ## Software Required
 - ESP-IDF
 - Bytebeam ESP-IDF SDK
+- [Wokwi VS Code Extension](https://docs.wokwi.com/vscode/getting-started)
+
+## Wokwi Configurations
+- Provide the app binaries path to wokwi via `wokwi.toml` file. 
+- Skectch the embedded circuit design for simulation via `diagram.json` file. 
 
 ## Project Configurations
 
