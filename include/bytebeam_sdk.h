@@ -153,7 +153,9 @@ typedef struct bytebeam_client {
 /*Status codes propogated via functions*/
 typedef enum {
     BB_SUCCESS = 0,
-    BB_FAILURE = -1
+    BB_FAILURE = -1,
+    BB_NULL_CHECK_FAILURE = -2,
+    BB_PROGRESS_OUT_OF_RANGE = -3
 } bytebeam_err_t;
 
 /**
@@ -332,7 +334,7 @@ bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_clie
  * @return
  *      void
  */
-void bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client);
+int bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client);
 
 /**
  * @brief reset action handler array.
@@ -340,9 +342,9 @@ void bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client);
  * @param[in] bytebeam_client bytebeam client handle
  * 
  * @return
- *      void
+ *      0 on success, BB_NULL_CHECK_FAILURE if bytebeam_client is NULL
  */
-void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client);
+int bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client);
 
 /**
  * @brief Download and update Firmware image 
@@ -352,8 +354,8 @@ void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client);
  * @param[in] action_id       action id for OTA update which is received with OTA update init request 
  * 
  * @return
- *      BB_SUCCESS : FW downloaded and updated successfully
- *      BB_FAILURE : FW download failed
+ *      BB_SUCCESS: Action handler array reset successfully
+ *      BB_NULL_CHECK_FAILURE: bytebeam_client is NULL
  */
 bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id);
 
@@ -430,7 +432,7 @@ bytebeam_log_level_t bytebeam_log_level_get(void);
  * @return
  *      void
  */
-void bytebeam_log_stream_set(char* stream_name);
+int bytebeam_log_stream_set(char* stream_name);
 
 /**
  * @brief Get the bytebeam log stream name
@@ -439,7 +441,7 @@ void bytebeam_log_stream_set(char* stream_name);
  *      void
  * 
  * @return
- *      bytebeam log stream name
+ *      0 on success, BB_NULL_CHECK_FAILURE if stream_name is NULL
  */
 char* bytebeam_log_stream_get();
 
