@@ -373,16 +373,12 @@ static void set_mqtt_conf(bytebeam_device_config_t *device_cfg, bytebeam_client_
 #endif
 }
 
-int bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
+static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
 {
     /* We will use this function in bytebeam client init and bytebeam client destroy phase, So to make sure if
      * bytebeam client is not running then we don't have any memory leaks (mostly solving pointer issues) :)
      */
-    if (bytebeam_client == NULL)
-    {
-        // Handle the null pointer case
-        return BB_NULL_CHECK_FAILURE;
-    }
+
     ESP_LOGD(TAG, "Cleaning Up Bytebeam SDK");
 
     // clearing bytebeam device configuration
@@ -420,19 +416,12 @@ int bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
         bytebeam_cert_json = NULL;
         ESP_LOGD(TAG, "Certificate JSON object deleted");
     }
-    return -1;
-
+    
     ESP_LOGD(TAG, "Bytebeam SDK Cleanup done !!");
 }
 
 int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client)
 {
-    if (device_cfg.project_id == NULL || device_cfg.device_id == NULL)
-    {
-        // Handle the null pointer case
-        return BB_NULL_CHECK_FAILURE;
-    }
-
     int msg_id;
     int qos = 1;
     char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = { 0 };
@@ -455,12 +444,6 @@ int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_
 
 int bytebeam_unsubscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client)
 {
-    if (device_cfg.project_id == NULL || device_cfg.device_id == NULL)
-    {
-        // Handle the null pointer case
-        return BB_NULL_CHECK_FAILURE;
-    }
-
     int msg_id;
     char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = { 0 };
 
@@ -808,7 +791,6 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 
     if (bytebeam_client == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
 
@@ -867,7 +849,6 @@ bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client)
 
     if (bytebeam_client == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
 
@@ -907,6 +888,7 @@ bytebeam_err_t bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_cli
 bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client, char *action_id)
 {
     int ret_val = 0;
+
     if (bytebeam_client == NULL || action_id == NULL)
     {
         return BB_NULL_CHECK_FAILURE;
@@ -924,6 +906,7 @@ bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client
 bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage)
 {
     int ret_val = 0;
+
     if (bytebeam_client == NULL || action_id == NULL) 
     {
         return BB_NULL_CHECK_FAILURE;
@@ -1099,9 +1082,9 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
 
 bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload)
 {
+
     if (bytebeam_client == NULL || stream_name == NULL || payload == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
 
@@ -1140,9 +1123,9 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
 
     if (bytebeam_client == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
+
     ret_val = bytebeam_hal_start_mqtt(bytebeam_client);
 
     if (ret_val != 0) {
@@ -1160,7 +1143,6 @@ bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client)
 
     if (bytebeam_client == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
 
@@ -1231,11 +1213,7 @@ int parse_ota_json(char *payload_string, char *url_string_return)
 
 int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char *ota_url)
 {
-    if (bytebeam_client == NULL || action_id == NULL || ota_url == NULL)
-    {
-        ESP_LOGE(TAG, "Invalid input parameters in perform_ota");
-        return BB_NULL_CHECK_FAILURE;
-    }
+
     // test_device_config = bytebeam_client->device_cfg;
     ESP_LOGI(TAG, "Starting OTA.....");
 
@@ -1313,16 +1291,22 @@ int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char *ota_u
 
 bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id)
 {
-    if (bytebeam_client == NULL || action_id == NULL)
+    if (bytebeam_client == NULL || action_id == NULL || payload_string == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
+
     char constructed_url[BYTEBAM_OTA_URL_STR_LEN] = { 0 };
 
     if ((parse_ota_json(payload_string, constructed_url)) == -1) {
         ESP_LOGE(TAG, "Firmware upgrade failed due to error in parsing OTA JSON");
         return BB_FAILURE;
+    }
+
+    // Check for null pointer after constructing the URL
+    if (constructed_url == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
     }
 
     ota_action_id = action_id;
@@ -1336,9 +1320,9 @@ bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_stri
 
 bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name)
 {
-    if (bytebeam_client == NULL || func_name == NULL)
+
+    if (bytebeam_client == NULL || func_ptr == NULL || func_name == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
 
@@ -1367,9 +1351,9 @@ bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, i
 
 bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client, char *func_name)
 {
+
     if (bytebeam_client == NULL || func_name == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
 
@@ -1400,9 +1384,9 @@ bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client
 
 bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client, int (*new_func_ptr)(bytebeam_client_t *, char *, char *), char *func_name)
 {
-    if (bytebeam_client == NULL || func_name == NULL)
+
+    if (bytebeam_client == NULL || new_func_ptr == NULL || func_name == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
 
@@ -1426,9 +1410,9 @@ bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client
 
 bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_client, char *func_name)
 {
+
     if (bytebeam_client == NULL || func_name == NULL)
     {
-        // Handle the null pointer case
         return BB_NULL_CHECK_FAILURE;
     }
 
@@ -1450,8 +1434,9 @@ bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_clie
     }
 }
 
-int bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client)
+bytebeam_err_t bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client)
 {
+
     if (bytebeam_client == NULL) 
     {
         return BB_NULL_CHECK_FAILURE;
@@ -1468,18 +1453,18 @@ int bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client)
         }
     }
     ESP_LOGI(TAG, "]");
-    
-    // Return a success code or any other appropriate value
-    return 0;
+
+    return BB_SUCCESS;
 }
 
-int bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client)
+bytebeam_err_t bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client)
 {
 
     if (bytebeam_client == NULL) 
     {
         return BB_NULL_CHECK_FAILURE;
     }
+
     int action_iterator = 0;
 
     for (action_iterator = 0; action_iterator < BYTEBEAM_NUMBER_OF_ACTIONS; action_iterator++) {
@@ -1489,8 +1474,7 @@ int bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client)
 
     function_handler_index = 0;
 
-    // Return a success code or any other appropriate value
-    return 0;
+    return BB_SUCCESS;
 }
 
 void bytebeam_log_client_set(bytebeam_client_t *bytebeam_client)
@@ -1523,8 +1507,9 @@ bytebeam_log_level_t bytebeam_log_level_get(void)
     return bytebeam_log_level;
 }
 
-int bytebeam_log_stream_set(char* stream_name)
+bytebeam_err_t bytebeam_log_stream_set(char* stream_name)
 {
+
     if (stream_name == NULL)
     {
         return BB_NULL_CHECK_FAILURE;
@@ -1538,9 +1523,8 @@ int bytebeam_log_stream_set(char* stream_name)
         ESP_LOGE(TAG, "log stream size exceeded buffer size");
     }
 
-    return 0;
+    return BB_SUCCESS;
 }
-
 
 char* bytebeam_log_stream_get()
 {

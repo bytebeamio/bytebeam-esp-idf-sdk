@@ -164,8 +164,9 @@ typedef enum {
  * @param[in] bytebeam_client bytebeam client handle
  * 
  * @return
- *      BB_SUCCESS : Bytebeam Client successfully initialized
- *      BB_FAILURE : Bytebeam Client initialization failed
+ *      BB_SUCCESS: Bytebeam client successfully initialized
+ *      BB_FAILURE: Bytebeam client initialization failed
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client is NULL
  */
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client);
 
@@ -177,8 +178,9 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client);
  * @param[in] bytebeam_client bytebeam client handle
  *
  * @return
- *      BB_SUCCESS : Bytebeam Client successfully destroyed
- *      BB_FAILURE : Bytebeam Client destroy failed
+ *      BB_SUCCESS: Bytebeam client successfully destroyed
+ *      BB_FAILURE: Bytebeam client destroy failed
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client is NULL
  */
 bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client);
 
@@ -189,8 +191,9 @@ bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client);
  * @param[in] action_id       action id for particular action
  * 
  * @return
- *      BB_SUCCESS : Message publish successful
- *      BB_FAILURE : Message publish failed
+ *      - BB_SUCCESS: Message publish successful
+ *      - BB_FAILURE: Message publish failed
+ *      - BB_NULL_CHECK_FAILURE: If the bytebeam_client or action_id is NULL
  */
 bytebeam_err_t bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_client, char *action_id);
 
@@ -201,8 +204,9 @@ bytebeam_err_t bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_cli
  * @param[in] action_id       action id for particular action
  * 
  * @return
- *      BB_SUCCESS : Message publish successful
- *      BB_FAILURE : Message publish failed
+ *      BB_SUCCESS: Message publish successful
+ *      BB_FAILURE: Message publish failed
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client or action_id is NULL
  */
 bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client, char *action_id);
 
@@ -214,8 +218,10 @@ bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client
  * @param[in] progress_percentage action execution progress in percentage
  * 
  * @return
- *      BB_SUCCESS : Message publish successful
- *      BB_FAILURE : Message publish failed
+ *      BB_SUCCESS: Message publish successful
+ *      BB_FAILURE: Message publish failed
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client or action_id is NULL
+ *      BB_PROGRESS_OUT_OF_RANGE: If the progress_percentage is out of range
  */
 bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_client, char *action_id, int progress_percentage);
 
@@ -242,8 +248,9 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t* client, char *a
  * @param[in] payload             message to publish
  * 
  * @return
- *      BB_SUCCESS : Message publish successful
- *      BB_FAILURE : Message publish failed
+ *      BB_SUCCESS: Message publish successful
+ *      BB_FAILURE: Message publish failed
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client, stream_name, or payload is NULL
  */
 bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload);
 
@@ -253,8 +260,9 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
  * @param[in] bytebeam_client bytebeam client handle
  * 
  * @return
- *      BB_SUCCESS : Bytebeam Client started successfully 
- *      BB_FAILURE : Bytebeam Client start failed 
+ *      - BB_SUCCESS: Bytebeam client started successfully
+ *      - BB_FAILURE: Bytebeam client start failed
+ *      - BB_NULL_CHECK_FAILURE: If the bytebeam_client is NULL
  */
 bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client);
 
@@ -266,8 +274,9 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client);
  * @param[in] bytebeam_client bytebeam client handle
  *
  * @return
- *      BB_SUCCESS : Bytebeam Client stopped successfully
- *      BB_FAILURE : Bytebeam Client stop failed
+ *      - BB_SUCCESS: Bytebeam client stopped successfully
+ *      - BB_FAILURE: Bytebeam client stop failed
+ *      - BB_NULL_CHECK_FAILURE: If the bytebeam_client is NULL
  */
 bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client);
 
@@ -283,8 +292,9 @@ bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client);
  * @param[in] func_name       action name 
  * 
  * @return
- *      BB_SUCCESS : Action handler added successfully
- *      BB_FAILURE : Failure in adding action handler 
+ *      BB_SUCCESS: Action handler added successfully
+ *      BB_FAILURE: Failure in adding the action handler
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client, func_ptr, or func_name is NULL
  */
 bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name);
 
@@ -295,10 +305,10 @@ bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, i
  * @param[in] func_name       action name 
  * 
  * @return
- *      BB_SUCCESS : Action handler removed successfully
- *      BB_FAILURE : Failure in removing action handler 
+ *      BB_SUCCESS: Action handler removed successfully
+ *      BB_FAILURE: Failure in removing the action handler
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client or func_name is NULL
  */
-
 bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client, char *func_name);
 
 /**
@@ -309,8 +319,9 @@ bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client
  * @param[in] func_name       action name 
  * 
  * @return
- *      BB_SUCCESS : Action handler updated successfully
- *      BB_FAILURE : Failure in updating action handler 
+ *      BB_SUCCESS: Action handler updated successfully
+ *      BB_FAILURE: Failure in updating the action handler
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client, new_func_ptr, or func_name is NULL
  */
 bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client, int (*new_func_ptr)(bytebeam_client_t *, char *, char *), char *func_name);
 
@@ -321,8 +332,9 @@ bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client
  * @param[in] func_name       action name
  *
  * @return
- *      BB_SUCCESS : If Action handler Exists
- *      BB_FAILURE : Action handler didn't exists
+ *      BB_SUCCESS: If the action handler exists
+ *      BB_FAILURE: If the action handler doesn't exist
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client or func_name is NULL
  */
 bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_client, char *func_name);
 
@@ -332,9 +344,10 @@ bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_clie
  * @param[in] bytebeam_client bytebeam client handle
  * 
  * @return
- *      void
+ *      BB_SUCCESS: Successfully printed the action handler array
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client is NULL
  */
-int bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client);
+bytebeam_err_t bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client);
 
 /**
  * @brief reset action handler array.
@@ -342,9 +355,10 @@ int bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client);
  * @param[in] bytebeam_client bytebeam client handle
  * 
  * @return
- *      0 on success, BB_NULL_CHECK_FAILURE if bytebeam_client is NULL
+ *      BB_SUCCESS: Reset action handler array successfully
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client is NULL
  */
-int bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client);
+bytebeam_err_t bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client);
 
 /**
  * @brief Download and update Firmware image 
@@ -354,8 +368,9 @@ int bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client);
  * @param[in] action_id       action id for OTA update which is received with OTA update init request 
  * 
  * @return
- *      BB_SUCCESS: Action handler array reset successfully
- *      BB_NULL_CHECK_FAILURE: bytebeam_client is NULL
+ *       BB_SUCCESS: OTA firmware update handled successfully
+ *       BB_NULL_CHECK_FAILURE: If the bytebeam_client, payload_string, or action_id is NULL
+ *       BB_FAILURE: Firmware upgrade failed due to an error in parsing OTA JSON or performing OTA
  */
 bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id);
 
@@ -430,9 +445,11 @@ bytebeam_log_level_t bytebeam_log_level_get(void);
  * @param[in] stream_name name of the log stream
  * 
  * @return
- *      void
+ *      BB_SUCCESS: If the log stream was successfully set
+ *      BB_FAILURE: If the log stream couldn't be set due to the action handler not existing
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client is NULL
  */
-int bytebeam_log_stream_set(char* stream_name);
+bytebeam_err_t bytebeam_log_stream_set(char* stream_name);
 
 /**
  * @brief Get the bytebeam log stream name
@@ -441,7 +458,7 @@ int bytebeam_log_stream_set(char* stream_name);
  *      void
  * 
  * @return
- *      0 on success, BB_NULL_CHECK_FAILURE if stream_name is NULL
+ *      bytebeam log stream name
  */
 char* bytebeam_log_stream_get();
 
