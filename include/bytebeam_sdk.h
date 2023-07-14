@@ -446,7 +446,7 @@ bytebeam_log_level_t bytebeam_log_level_get(void);
  * 
  * @return
  *      BB_SUCCESS: If the log stream was successfully set
- *      BB_FAILURE: If the log stream couldn't be set due to the action handler not existing
+ *      BB_FAILURE: If the log stream size exceeded buffer size
  *      BB_NULL_CHECK_FAILURE: If the bytebeam_client is NULL
  */
 bytebeam_err_t bytebeam_log_stream_set(char* stream_name);

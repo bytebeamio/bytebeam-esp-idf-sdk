@@ -1213,7 +1213,6 @@ int parse_ota_json(char *payload_string, char *url_string_return)
 
 int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char *ota_url)
 {
-
     // test_device_config = bytebeam_client->device_cfg;
     ESP_LOGI(TAG, "Starting OTA.....");
 
@@ -1301,12 +1300,6 @@ bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_stri
     if ((parse_ota_json(payload_string, constructed_url)) == -1) {
         ESP_LOGE(TAG, "Firmware upgrade failed due to error in parsing OTA JSON");
         return BB_FAILURE;
-    }
-
-    // Check for null pointer after constructing the URL
-    if (constructed_url == NULL)
-    {
-        return BB_NULL_CHECK_FAILURE;
     }
 
     ota_action_id = action_id;
@@ -1521,6 +1514,7 @@ bytebeam_err_t bytebeam_log_stream_set(char* stream_name)
     if (temp_var >= max_len)
     {
         ESP_LOGE(TAG, "log stream size exceeded buffer size");
+        return BB_FAILURE;
     }
 
     return BB_SUCCESS;
