@@ -416,7 +416,7 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
         bytebeam_cert_json = NULL;
         ESP_LOGD(TAG, "Certificate JSON object deleted");
     }
-
+    
     ESP_LOGD(TAG, "Bytebeam SDK Cleanup done !!");
 }
 
@@ -788,7 +788,12 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
-    
+
+    if (bytebeam_client == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     // check-in the device config data from file system if in case not provided 
     if (bytebeam_client->use_device_config_data == false) {
         // read the device config json stored in file system
@@ -842,6 +847,11 @@ bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
 
+    if (bytebeam_client == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     ret_val = bytebeam_hal_destroy(bytebeam_client);
 
     if (ret_val != 0) {
@@ -861,6 +871,11 @@ bytebeam_err_t bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_cli
 {
     int ret_val = 0;
 
+    if (bytebeam_client == NULL || action_id == NULL) 
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, 100, "Completed", "");
 
     if (ret_val != 0) {
@@ -873,6 +888,11 @@ bytebeam_err_t bytebeam_publish_action_completed(bytebeam_client_t *bytebeam_cli
 bytebeam_err_t bytebeam_publish_action_failed(bytebeam_client_t *bytebeam_client, char *action_id)
 {
     int ret_val = 0;
+
+    if (bytebeam_client == NULL || action_id == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
 
     ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", "Action failed");
 
@@ -887,6 +907,16 @@ bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_clie
 {
     int ret_val = 0;
 
+    if (bytebeam_client == NULL || action_id == NULL) 
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+    
+    // Check if progress percentage is out of range
+    if (progress_percentage < 0 || progress_percentage > 100) 
+    {
+        return BB_PROGRESS_OUT_OF_RANGE;
+    }
     ret_val = bytebeam_publish_action_status(bytebeam_client, action_id, progress_percentage, "Progress", "");
 
     if (ret_val != 0) {
@@ -895,6 +925,7 @@ bytebeam_err_t bytebeam_publish_action_progress(bytebeam_client_t *bytebeam_clie
         return BB_SUCCESS;
     }
 }
+
 
 bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client, char *action_id, int percentage, char *status, char *error_message)
 {
@@ -1051,6 +1082,12 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
 
 bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload)
 {
+
+    if (bytebeam_client == NULL || stream_name == NULL || payload == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     int qos = 1;
     int msg_id = 0;
     char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = {0};
@@ -1084,6 +1121,11 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
 
+    if (bytebeam_client == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     ret_val = bytebeam_hal_start_mqtt(bytebeam_client);
 
     if (ret_val != 0) {
@@ -1098,6 +1140,11 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
 bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
+
+    if (bytebeam_client == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
 
     ret_val = bytebeam_hal_stop_mqtt(bytebeam_client);
 
@@ -1243,6 +1290,11 @@ int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char *ota_u
 
 bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_string, char *action_id)
 {
+    if (bytebeam_client == NULL || action_id == NULL || payload_string == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     char constructed_url[BYTEBAM_OTA_URL_STR_LEN] = { 0 };
 
     if ((parse_ota_json(payload_string, constructed_url)) == -1) {
@@ -1261,6 +1313,12 @@ bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_stri
 
 bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *, char *, char *), char *func_name)
 {
+
+    if (bytebeam_client == NULL || func_ptr == NULL || func_name == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     if (function_handler_index >= BYTEBEAM_NUMBER_OF_ACTIONS) {
         ESP_LOGE(TAG, "Creation of new action handler failed");
         return BB_FAILURE;
@@ -1286,6 +1344,12 @@ bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, i
 
 bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client, char *func_name)
 {
+
+    if (bytebeam_client == NULL || func_name == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     int action_iterator = 0;
     int target_action_index = -1;
 
@@ -1313,6 +1377,12 @@ bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client
 
 bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client, int (*new_func_ptr)(bytebeam_client_t *, char *, char *), char *func_name)
 {
+
+    if (bytebeam_client == NULL || new_func_ptr == NULL || func_name == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     int action_iterator = 0;
     int target_action_index = -1;
 
@@ -1333,6 +1403,12 @@ bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client
 
 bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_client, char *func_name)
 {
+
+    if (bytebeam_client == NULL || func_name == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     int action_iterator = 0;
     int target_action_index = -1;
 
@@ -1351,8 +1427,14 @@ bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_clie
     }
 }
 
-void bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client)
+bytebeam_err_t bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client)
 {
+
+    if (bytebeam_client == NULL) 
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     int action_iterator = 0;
 
     ESP_LOGI(TAG, "[");
@@ -1364,10 +1446,18 @@ void bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_client)
         }
     }
     ESP_LOGI(TAG, "]");
+
+    return BB_SUCCESS;
 }
 
-void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client)
+bytebeam_err_t bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client)
 {
+
+    if (bytebeam_client == NULL) 
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     int action_iterator = 0;
 
     for (action_iterator = 0; action_iterator < BYTEBEAM_NUMBER_OF_ACTIONS; action_iterator++) {
@@ -1376,6 +1466,8 @@ void bytebeam_reset_action_handler_array(bytebeam_client_t *bytebeam_client)
     }
 
     function_handler_index = 0;
+
+    return BB_SUCCESS;
 }
 
 void bytebeam_log_client_set(bytebeam_client_t *bytebeam_client)
@@ -1408,15 +1500,24 @@ bytebeam_log_level_t bytebeam_log_level_get(void)
     return bytebeam_log_level;
 }
 
-void bytebeam_log_stream_set(char* stream_name)
+bytebeam_err_t bytebeam_log_stream_set(char* stream_name)
 {
+
+    if (stream_name == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
     int max_len = BYTEBEAM_LOG_STREAM_STR_LEN;
     int temp_var = snprintf(bytebeam_log_stream, max_len, "%s", stream_name);
 
-    if(temp_var >= max_len)
+    if (temp_var >= max_len)
     {
         ESP_LOGE(TAG, "log stream size exceeded buffer size");
+        return BB_FAILURE;
     }
+
+    return BB_SUCCESS;
 }
 
 char* bytebeam_log_stream_get()
