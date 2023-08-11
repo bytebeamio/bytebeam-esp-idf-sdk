@@ -1,0 +1,231 @@
+espcoredump.py v1.4.1
+===============================================================
+==================== ESP32 CORE DUMP START ====================
+
+Crashed task handle: 0x3ffbbfac, name: '', GDB name: 'process 1073463212'
+
+================== CURRENT THREAD REGISTERS ===================
+exccause       0x1d (StoreProhibitedCause)
+excvaddr       0x0
+epc1           0x40087abb
+epc2           0x0
+epc3           0x0
+epc4           0x0
+epc5           0x0
+epc6           0x0
+eps2           0x0
+eps3           0x0
+eps4           0x0
+eps5           0x0
+eps6           0x0
+[New process 1073463212]
+[New process 1073465100]
+[New process 1073466988]
+[New process 1073472948]
+[New process 1073412424]
+[New process 1073477008]
+[New process 1073454316]
+[New process 1073458764]
+[New process 1073486236]
+[Current thread is 1 (process 1073463212)]
+
+==================== CURRENT THREAD STACK =====================
+pc             0x40081db5          0x40081db5 <panic_abort+21>
+lbeg           0x4000c349          1073791817
+lend           0x4000c36b          1073791851
+lcount         0x0                 0
+sar            0x10                16
+ps             0x60b20             396064
+threadptr      <unavailable>
+br             <unavailable>
+scompare1      <unavailable>
+acclo          <unavailable>
+acchi          <unavailable>
+m0             <unavailable>
+m1             <unavailable>
+m2             <unavailable>
+m3             <unavailable>
+expstate       <unavailable>
+f64r_lo        <unavailable>
+f64r_hi        <unavailable>
+f64s           <unavailable>
+fcr            <unavailable>
+fsr            <unavailable>
+a0             0x80088b48          -2146923704
+a1             0x3ffbbdf0          1073462768
+a2             0x3ffbbe3b          1073462843
+a3             0x3ffbbe68          1073462888
+a4             0xa                 10
+a5             0x36                54
+a6             0x0                 0
+a7             0x3ffbbda4          1073462692
+a8             0x0                 0
+a9             0x1                 1
+a10            0x3ffbbe39          1073462841
+a11            0x3ffbbe39          1073462841
+a12            0x0                 0
+a13            0x1000              4096
+a14            0x3ffbbda2          1073462690
+a15            0xff000000          -16777216
+#0  0x40081db5 in panic_abort (details=0x3ffbbe3b \"abort() was called at PC 0x40088b3b on core 0\") at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/panic.c:412
+#1  0x40088b48 in esp_system_abort (details=0x3ffbbe3b \"abort() was called at PC 0x40088b3b on core 0\") at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/esp_system.c:135
+#2  0x4008f715 in abort () at C:/Espressif/frameworks/esp-idf-v5.0/components/newlib/abort.c:38
+#3  0x40088b3e in _esp_error_check_failed (rc=-1, file=0x3f403f30 \"./main/app_main.c\", line=156, function=0x3f404008 <__func__$0> \"app_main\", expression=0x3f41f4d0 \"-1\") at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/esp_err.c:47
+#4  0x400da3c4 in app_main () at C:/Users/mayan/bytebeam-sdk/esp-bytebeam-sdk/examples/push_coredump/main/app_main.c:156
+#5  0x40178bf6 in main_task (args=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/port_common.c:131
+#6  0x4008bdbc in vPortTaskWrapper (pxCode=0x40178b7c <main_task>, pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+======================== THREADS INFO =========================
+  Id   Target Id          Frame
+* 1    process 1073463212 0x40081db5 in panic_abort (details=0x3ffbbe3b \"abort() was called at PC 0x40088b3b on core 0\") at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/panic.c:412
+  2    process 1073465100 0x40087ab6 in esp_cpu_wait_for_intr () at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_hw_support/cpu.c:110
+  3    process 1073466988 0x40087ab6 in esp_cpu_wait_for_intr () at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_hw_support/cpu.c:110
+  4    process 1073472948 0x40085070 in esp_crosscore_int_send_yield (core_id=0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+  5    process 1073412424 0x40085070 in esp_crosscore_int_send_yield (core_id=0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+  6    process 1073477008 0x40085070 in esp_crosscore_int_send_yield (core_id=0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+  7    process 1073454316 0x40085070 in esp_crosscore_int_send_yield (core_id=1) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+  8    process 1073458764 0x4000bff0 in ?? ()
+  9    process 1073486236 0x40085070 in esp_crosscore_int_send_yield (core_id=0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+
+==================== THREAD 1 (TCB: 0x3ffbbfac, name: 'main') =====================
+#0  0x40081db5 in panic_abort (details=0x3ffbbe3b \"abort() was called at PC 0x40088b3b on core 0\") at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/panic.c:412
+#1  0x40088b48 in esp_system_abort (details=0x3ffbbe3b \"abort() was called at PC 0x40088b3b on core 0\") at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/esp_system.c:135
+#2  0x4008f715 in abort () at C:/Espressif/frameworks/esp-idf-v5.0/components/newlib/abort.c:38
+#3  0x40088b3e in _esp_error_check_failed (rc=-1, file=0x3f403f30 \"./main/app_main.c\", line=156, function=0x3f404008 <__func__$0> \"app_main\", expression=0x3f41f4d0 \"-1\") at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/esp_err.c:47
+#4  0x400da3c4 in app_main () at C:/Users/mayan/bytebeam-sdk/esp-bytebeam-sdk/examples/push_coredump/main/app_main.c:156
+#5  0x40178bf6 in main_task (args=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/port_common.c:131
+#6  0x4008bdbc in vPortTaskWrapper (pxCode=0x40178b7c <main_task>, pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+==================== THREAD 2 (TCB: 0x3ffbc70c, name: 'IDLE') =====================
+#0  0x40087ab6 in esp_cpu_wait_for_intr () at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_hw_support/cpu.c:110
+#1  0x400d3f8e in esp_vApplicationIdleHook () at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/freertos_hooks.c:59
+#2  0x4008a19c in prvIdleTask (pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/tasks.c:4157
+#3  0x4008bdbc in vPortTaskWrapper (pxCode=0x4008a190 <prvIdleTask>, pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+==================== THREAD 3 (TCB: 0x3ffbce6c, name: 'IDLE') =====================
+#0  0x40087ab6 in esp_cpu_wait_for_intr () at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_hw_support/cpu.c:110
+#1  0x400d3f8e in esp_vApplicationIdleHook () at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/freertos_hooks.c:59
+#2  0x4008a19c in prvIdleTask (pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/tasks.c:4157
+#3  0x4008bdbc in vPortTaskWrapper (pxCode=0x4008a190 <prvIdleTask>, pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+==================== THREAD 4 (TCB: 0x3ffbe5b4, name: 'tiT') =====================
+#0  0x40085070 in esp_crosscore_int_send_yield (core_id=0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+#1  0x400899b9 in xQueueReceive (xQueue=0x3ffbd6d8, pvBuffer=0x3ffbe4f0, xTicksToWait=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/xtensa/include/xt_utils.h:40
+#2  0x400fb262 in sys_arch_mbox_fetch (mbox=<optimized out>, msg=0x3ffbe4f0, timeout=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/lwip/port/esp32/freertos/sys_arch.c:342
+#3  0x400fde07 in tcpip_timeouts_mbox_fetch (mbox=0x3ffb6d74 <tcpip_mbox>, msg=0x3ffbe4f0) at C:/Espressif/frameworks/esp-idf-v5.0/components/lwip/lwip/src/api/tcpip.c:104
+#4  0x400fdec2 in tcpip_thread (arg=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/lwip/lwip/src/api/tcpip.c:142
+#5  0x4008bdbc in vPortTaskWrapper (pxCode=0x400fdea8 <tcpip_thread>, pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+==================== THREAD 5 (TCB: 0x3ffaf948, name: 'ipc0') =====================
+#0  0x40085070 in esp_crosscore_int_send_yield (core_id=0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+#1  0x40089b48 in xQueueSemaphoreTake (xQueue=0x3ffb3898 <s_ipc_sem_buffer>, xTicksToWait=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/xtensa/include/xt_utils.h:40
+#2  0x400850c4 in ipc_task (arg=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/esp_ipc.c:64
+#3  0x4008bdbc in vPortTaskWrapper (pxCode=0x40085094 <ipc_task>, pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+==================== THREAD 6 (TCB: 0x3ffbf590, name: 'sys_evt') =====================
+#0  0x40085070 in esp_crosscore_int_send_yield (core_id=0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+#1  0x400899b9 in xQueueReceive (xQueue=0x3ffbe7dc, pvBuffer=0x3ffbf4a0, xTicksToWait=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/xtensa/include/xt_utils.h:40
+#2  0x40178108 in esp_event_loop_run (event_loop=0x3ffbe7c0, ticks_to_run=4294967295) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_event/esp_event.c:558
+#3  0x40178120 in esp_event_loop_run_task (args=0x3ffbe7c0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_event/esp_event.c:107
+#4  0x4008bdbc in vPortTaskWrapper (pxCode=0x40178114 <esp_event_loop_run_task>, pvParameters=0x3ffbe7c0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+==================== THREAD 7 (TCB: 0x3ffb9cec, name: 'ipc1') =====================
+#0  0x40085070 in esp_crosscore_int_send_yield (core_id=1) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+#1  0x40089b48 in xQueueSemaphoreTake (xQueue=0x3ffb38ec <s_ipc_sem_buffer+84>, xTicksToWait=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/xtensa/include/xt_utils.h:40
+#2  0x400850c4 in ipc_task (arg=0x1) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/esp_ipc.c:64
+#3  0x4008bdbc in vPortTaskWrapper (pxCode=0x40085094 <ipc_task>, pvParameters=0x1) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+==================== THREAD 8 (TCB: 0x3ffbae4c, name: 'esp_timer') =====================
+#0  0x4000bff0 in ?? ()
+#1  0x4008c0b2 in vPortClearInterruptMaskFromISR (prev_level=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos/portmacro.h:566
+#2  vPortExitCritical (mux=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:339
+#3  0x4008b615 in ulTaskGenericNotifyTake (uxIndexToWait=0, xClearCountOnExit=1, xTicksToWait=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/tasks.c:5564
+#4  0x400d677f in timer_task (arg=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_timer/src/esp_timer.c:385
+#5  0x4008bdbc in vPortTaskWrapper (pxCode=0x400d6770 <timer_task>, pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+==================== THREAD 9 (TCB: 0x3ffc199c, name: 'wifi') =====================
+#0  0x40085070 in esp_crosscore_int_send_yield (core_id=0) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_system/crosscore_int.c:156
+#1  0x400899b9 in xQueueReceive (xQueue=0x3ffbf8a8, pvBuffer=0x3ffc18e0, xTicksToWait=<optimized out>) at C:/Espressif/frameworks/esp-idf-v5.0/components/xtensa/include/xt_utils.h:40
+#2  0x40104eac in queue_recv_wrapper (queue=0x3ffbf8a8, item=0x3ffc18e0, block_time_tick=4294967295) at C:/Espressif/frameworks/esp-idf-v5.0/components/esp_wifi/esp32/esp_adapter.c:433
+#3  0x40091000 in ppTask ()
+#4  0x4008bdbc in vPortTaskWrapper (pxCode=0x40090fd4 <ppTask>, pvParameters=0x0) at C:/Espressif/frameworks/esp-idf-v5.0/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:151
+
+
+======================= ALL MEMORY REGIONS ========================
+Name   Address   Size   Attrs
+.rtc.text 0x400c0000 0x0 RW
+.rtc.dummy 0x3ff80000 0x0 RW
+.rtc.force_fast 0x3ff80000 0x0 RW
+.rtc.data 0x50000000 0x10 RW A
+.rtc_noinit 0x50000010 0x0 RW
+.rtc.force_slow 0x50000010 0x0 RW
+.iram0.vectors 0x40080000 0x403 R XA
+.iram0.text 0x40080404 0x14af3 R XA
+.dram0.data 0x3ffb0000 0x50cc RW A
+.ext_ram_noinit 0x3f800000 0x0 RW
+.noinit 0x3ffb50cc 0x0 RW
+.ext_ram.bss 0x3f800000 0x0 RW
+.flash.appdesc 0x3f400020 0x100 R  A
+.flash.rodata 0x3f400120 0x28540 RW A
+.flash.text 0x400d0020 0xa8ef3 R XA
+.phyiram.20 0x40178f14 0x61 R XA
+.phyiram.18 0x40178f78 0x10e R XA
+.phyiram.19 0x40179088 0x90 R XA
+.phyiram.17 0x40179118 0x2d7 R XA
+.phyiram.0 0x401793f0 0x2b R XA
+.phyiram.1 0x4017941c 0x7d R XA
+.phyiram.2 0x4017949c 0x21e R XA
+.phyiram.3 0x401796bc 0xab R XA
+.phyiram.4 0x40179768 0xff R XA
+.phyiram.6 0x40179868 0x83 R XA
+.phyiram.7 0x401798ec 0x1ff R XA
+.phyiram.8 0x40179aec 0x177 R XA
+.phyiram.9 0x40179c64 0x8e R XA
+.phyiram.13 0x40179cf4 0xba R XA
+.phyiram.12 0x40179db0 0xeb R XA
+.phyiram.14 0x40179e9c 0x1cb R XA
+.phyiram.16 0x4017a068 0x72 R XA
+.phyiram.11 0x4017a0dc 0x78 R XA
+.phyiram.15 0x4017a154 0xba R XA
+.phyiram.21 0x4017a210 0x4a R XA
+.phyiram.22 0x4017a25c 0x31 R XA
+.phyiram.23 0x4017a290 0x103 R XA
+.phyiram.24 0x4017a394 0x87 R XA
+.iram0.data 0x40094ef8 0x0 RW
+.iram0.bss 0x40094ef8 0x0 RW
+.dram0.heap_start 0x3ffb9690 0x0 RW
+.coredump.tasks.data 0x3ffbbfac 0x158 RW
+.coredump.tasks.data 0x3ffbbd30 0x274 RW
+.coredump.tasks.data 0x3ffbc70c 0x158 RW
+.coredump.tasks.data 0x3ffbc560 0x1a4 RW
+.coredump.tasks.data 0x3ffbce6c 0x158 RW
+.coredump.tasks.data 0x3ffbccc0 0x1a4 RW
+.coredump.tasks.data 0x3ffbe5b4 0x158 RW
+.coredump.tasks.data 0x3ffbe380 0x22c RW
+.coredump.tasks.data 0x3ffaf948 0x158 RW
+.coredump.tasks.data 0x3ffaf780 0x1c0 RW
+.coredump.tasks.data 0x3ffbf590 0x158 RW
+.coredump.tasks.data 0x3ffbf380 0x208 RW
+.coredump.tasks.data 0x3ffb9cec 0x158 RW
+.coredump.tasks.data 0x3ffafce0 0x1c0 RW
+.coredump.tasks.data 0x3ffbae4c 0x158 RW
+.coredump.tasks.data 0x3ffbac90 0x1b4 RW
+.coredump.tasks.data 0x3ffc199c 0x158 RW
+.coredump.tasks.data 0x3ffc17a0 0x1f4 RW
+
+===================== ESP32 CORE DUMP END =====================
+===============================================================
+Exception in thread Thread-1:
+Traceback (most recent call last):
+Exception in thread Thread-2:
+Traceback (most recent call last):
+  File "threading.py", line 932, in _bootstrap_inner
+  File "threading.py", line 932, in _bootstrap_inner
+  File "threading.py", line 870, in run
+  File "threading.py", line 870, in run
+  File "subprocess.py", line 1366, in _readerthread
+OSError: [Errno 22] Invalid argument
+  File "subprocess.py", line 1366, in _readerthread
+OSError: [Errno 22] Invalid argument
+WARNING: Attempt to terminate the GDB process failed, because it is already terminated. Skip
+Done!

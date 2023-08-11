@@ -428,6 +428,13 @@ int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client)
         ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish device heartbeat");
     }
 
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+    // publish the device coredump if any
+    if (bytebeam_publish_device_coredump(bytebeam_client) != 0) {
+        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish device coredump");
+    }
+#endif
+
     return 0;
 }
 

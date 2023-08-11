@@ -17,6 +17,9 @@
 #include "esp_timer.h"
 #include "esp_idf_version.h"
 
+#include "esp_partition.h"
+#include "esp_core_dump.h"
+
 char *ota_action_id = "";
 char ota_error_str[BYTEBEAM_OTA_ERROR_STR_LEN] = "";
 
@@ -784,6 +787,84 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     return ret_val;
 }
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+int bytebeam_publish_device_coredump(bytebeam_client_t *bytebeam_client)
+{
+    esp_err_t err = ESP_OK;
+    uint32_t core_size = 0;
+    uint32_t core_part_add = 0;
+    const esp_partition_t *core_part = NULL;
+    static uint8_t read_data[1024] = "";
+
+
+    /* Find the partition that could potentially contain a (previous) core dump. */
+    core_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+                                        ESP_PARTITION_SUBTYPE_DATA_COREDUMP,
+                                        NULL);
+
+    if (core_part == NULL) {
+        ESP_LOGE(TAG, "No core dump partition found!");
+        return BB_FAILURE;
+    }
+
+    err = esp_core_dump_image_check();
+
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_core_dump_image_check failed (%d)!", err);
+        return BB_FAILURE;
+    }  
+
+    err = esp_core_dump_image_get(&core_part_add, &core_size);
+
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_core_dump_image_get failed (%d)!", err);
+        return BB_FAILURE;
+    }
+
+    int block = 0;
+    uint32_t offset = 0;
+    uint32_t size = core_size;
+    uint32_t chunk_length = 1024;
+
+    printf("core_size : %d", (int)core_size);
+
+    while (size > 0) {
+        block++;
+        const uint32_t to_read = (size < chunk_length) ? size : chunk_length;
+
+        /* Read the content of the flash. */
+        err = esp_partition_read(core_part, offset, read_data, to_read);
+
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to read data from core dump (%d)!", err);
+            return BB_FAILURE;
+        }
+
+        /* Move the offset forward and decrease the remaining size. */
+        offset += to_read;
+        size -= to_read;
+
+        ESP_LOGI(TAG, "block : %d, err : %d", block, err);
+        ESP_LOGI(TAG, "size : %d, offset : %d, to_read : %d", (int)size, (int)offset, (int)to_read);
+
+        printf("[");
+        int j = 0;
+        for(; j<1024; j++) {
+            printf("%d ", read_data[j]);	
+        }
+        printf("]\n");
+
+        ESP_LOGI(TAG, "j : %d", j);
+
+        memset(read_data, 77, sizeof(read_data));
+    }
+    
+    ESP_LOGI(TAG, "bytebeam publish device coredump !");
+
+    return BB_SUCCESS;
+}
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH */
 
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
 {

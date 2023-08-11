@@ -12,4 +12,5 @@ idf_component_register(
         "app_update"
         "spiffs"
         "fatfs"
-        "esp_timer")
+        "esp_timer"
+        "espcoredump")

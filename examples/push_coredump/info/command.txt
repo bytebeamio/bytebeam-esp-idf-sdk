@@ -1,0 +1,1 @@
+esp-coredump --chip esp32 info_corefile -t b64 -c coredump.b64 ..\build\bytebeam_push_coredump_example.elf
