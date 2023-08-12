@@ -1,7 +1,4 @@
 #include "cJSON.h"
-#include "esp_log.h"
-#include "sys/time.h"
-#include "esp_timer.h"
 #include "bytebeam_esp_hal.h"
 #include "bytebeam_action.h"
 #include "bytebeam_stream.h"
@@ -10,10 +7,10 @@ static const char *TAG = "BYTEBEAM_STREAM";
 
 int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 {
-    int ret_val = 0;
-    struct timeval te;
-    long long milliseconds = 0;
     static uint64_t sequence = 0;
+    unsigned long long milliseconds = 0;
+
+    int ret_val = 0;
     const char* reboot_reason_str = "";
     long long uptime = 0;
 
@@ -35,7 +32,7 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     if(device_shadow_json_list == NULL)
     {
-        ESP_LOGE(TAG, "Json Init failed.");
+        BB_LOGE(TAG, "Json Init failed.");
         return -1;
     }
 
@@ -43,19 +40,16 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     if(device_shadow_json == NULL)
     {
-        ESP_LOGE(TAG, "Json add failed.");
+        BB_LOGE(TAG, "Json add failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
 
-    // get the current time
-    gettimeofday(&te, NULL);
-    milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000;
+    milliseconds = bytebeam_hal_get_epoch_millis();
 
-    // make sure you got the epoch millis
     if(milliseconds == 0)
     {
-        ESP_LOGE(TAG, "failed to get epoch millis.");
+        BB_LOGE(TAG, "failed to get epoch millis.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
@@ -64,7 +58,7 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     if(timestamp_json == NULL)
     {
-        ESP_LOGE(TAG, "Json add time stamp failed.");
+        BB_LOGE(TAG, "Json add time stamp failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
@@ -76,27 +70,27 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     if(sequence_json == NULL)
     {
-        ESP_LOGE(TAG, "Json add sequence id failed.");
+        BB_LOGE(TAG, "Json add sequence id failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
 
     cJSON_AddItemToObject(device_shadow_json, "sequence", sequence_json);
 
-    esp_reset_reason_t reboot_reason_id = esp_reset_reason();
+    bytebeam_reset_reason_t reboot_reason_id = bytebeam_hal_get_reset_reason();
 
     switch(reboot_reason_id) {
-        case ESP_RST_UNKNOWN   : reboot_reason_str = "Unknown Reset";            break;
-        case ESP_RST_POWERON   : reboot_reason_str = "Power On Reset";           break;
-        case ESP_RST_EXT       : reboot_reason_str = "External Pin Reset";       break;
-        case ESP_RST_SW        : reboot_reason_str = "Software Reset";           break;
-        case ESP_RST_PANIC     : reboot_reason_str = "Hard Fault Reset";         break;
-        case ESP_RST_INT_WDT   : reboot_reason_str = "Interrupt Watchdog Reset"; break;
-        case ESP_RST_TASK_WDT  : reboot_reason_str = "Task Watchdog Reset";      break;
-        case ESP_RST_WDT       : reboot_reason_str = "Other Watchdog Reset";     break;
-        case ESP_RST_DEEPSLEEP : reboot_reason_str = "Exiting Deep Sleep Reset"; break;
-        case ESP_RST_BROWNOUT  : reboot_reason_str = "Brownout Reset";           break;
-        case ESP_RST_SDIO      : reboot_reason_str = "SDIO Reset";               break;
+        case BB_RST_UNKNOWN   : reboot_reason_str = "Unknown Reset";            break;
+        case BB_RST_POWERON   : reboot_reason_str = "Power On Reset";           break;
+        case BB_RST_EXT       : reboot_reason_str = "External Pin Reset";       break;
+        case BB_RST_SW        : reboot_reason_str = "Software Reset";           break;
+        case BB_RST_PANIC     : reboot_reason_str = "Hard Fault Reset";         break;
+        case BB_RST_INT_WDT   : reboot_reason_str = "Interrupt Watchdog Reset"; break;
+        case BB_RST_TASK_WDT  : reboot_reason_str = "Task Watchdog Reset";      break;
+        case BB_RST_WDT       : reboot_reason_str = "Other Watchdog Reset";     break;
+        case BB_RST_DEEPSLEEP : reboot_reason_str = "Exiting Deep Sleep Reset"; break;
+        case BB_RST_BROWNOUT  : reboot_reason_str = "Brownout Reset";           break;
+        case BB_RST_SDIO      : reboot_reason_str = "SDIO Reset";               break;
 
         default: reboot_reason_str = "Unknown Reset Id";
     }
@@ -105,24 +99,20 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     if(device_reset_reason_json == NULL)
     {
-        ESP_LOGE(TAG, "Json add device reboot reason failed.");
+        BB_LOGE(TAG, "Json add device reboot reason failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
 
     cJSON_AddItemToObject(device_shadow_json, "Reset_Reason", device_reset_reason_json);
 
-    // get the device up time
-    uptime = esp_timer_get_time();
-
-    // change to millis interval
-    uptime = uptime/1000;
+    uptime = bytebeam_hal_get_uptime_ms();
 
     device_uptime_json = cJSON_CreateNumber(uptime);
 
     if(device_uptime_json == NULL)
     {
-        ESP_LOGE(TAG, "Json add device uptime failed.");
+        BB_LOGE(TAG, "Json add device uptime failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
@@ -138,7 +128,7 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     if(device_status_json == NULL)
     {
-        ESP_LOGE(TAG, "Json add device status failed.");
+        BB_LOGE(TAG, "Json add device status failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
@@ -151,7 +141,7 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
         if(device_software_type_json == NULL)
         {
-            ESP_LOGE(TAG, "Json add device software type failed.");
+            BB_LOGE(TAG, "Json add device software type failed.");
             cJSON_Delete(device_shadow_json_list);
             return -1;
         }
@@ -165,7 +155,7 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
         if(device_software_version_json == NULL)
         {
-            ESP_LOGE(TAG, "Json add device software version failed.");
+            BB_LOGE(TAG, "Json add device software version failed.");
             cJSON_Delete(device_shadow_json_list);
             return -1;
         }
@@ -180,7 +170,7 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
         if(device_hardware_type_json == NULL)
         {
-            ESP_LOGE(TAG, "Json add device hardware type failed.");
+            BB_LOGE(TAG, "Json add device hardware type failed.");
             cJSON_Delete(device_shadow_json_list);
             return -1;
         }
@@ -194,7 +184,7 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
         if(device_hardware_version_json == NULL)
         {
-            ESP_LOGE(TAG, "Json add device hardware version failed.");
+            BB_LOGE(TAG, "Json add device hardware version failed.");
             cJSON_Delete(device_shadow_json_list);
             return -1;
         }
@@ -208,12 +198,12 @@ int bytebeam_publish_device_heartbeat(bytebeam_client_t *bytebeam_client)
 
     if(string_json == NULL)
     {
-        ESP_LOGE(TAG, "Json string print failed.");
+        BB_LOGE(TAG, "Json string print failed.");
         cJSON_Delete(device_shadow_json_list);
         return -1;
     }
 
-    ESP_LOGI(TAG, "\nStatus to send:\n%s\n", string_json);
+    BB_LOGI(TAG, "\nStatus to send:\n%s\n", string_json);
 
     // publish the json to device shadow stream
     ret_val = bytebeam_publish_to_stream(bytebeam_client, "device_shadow", string_json);
@@ -244,19 +234,19 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
 
     if(temp_var >= max_len)
     {
-        ESP_LOGE(TAG, "Publish topic size exceeded buffer size");
+        BB_LOGE(TAG, "Publish topic size exceeded buffer size");
         return BB_FAILURE;
     }
 
-    ESP_LOGI(TAG, "Topic is %s", topic);
+    BB_LOGI(TAG, "Topic is %s", topic);
 
     msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, payload, strlen(payload), qos);
     
     if (msg_id != -1) {
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, payload);
+        BB_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, payload);
         return BB_SUCCESS;
     } else {
-        ESP_LOGE(TAG, "Publish to %s stream Failed", stream_name);
+        BB_LOGE(TAG, "Publish to %s stream Failed", stream_name);
         return BB_FAILURE;
     }
 }
