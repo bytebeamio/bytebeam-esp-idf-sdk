@@ -3,7 +3,11 @@ idf_component_register(
         "include"    
     SRCS 
         "src/bytebeam_esp_hal.c" 
-        "src/bytebeam_sdk.c"             
+        "src/bytebeam_client.c"
+        "src/bytebeam_action.c"
+        "src/bytebeam_stream.c"
+        "src/bytebeam_ota.c"
+        "src/bytebeam_log.c"       
     PRIV_REQUIRES 
         "json"
         "mqtt"

@@ -1,17 +1,13 @@
 #include <stdio.h>
-#include "mqtt_client.h"
 #include "esp_log.h"
-#include "esp_ota_ops.h"
-#include "esp_http_client.h"
-#include "esp_https_ota.h"
-#include "bytebeam_sdk.h"
-#include "bytebeam_esp_hal.h"
-#include "math.h"
-#include "string.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-#include "esp_system.h"
+#include "esp_https_ota.h"
 #include "esp_idf_version.h"
+#include "bytebeam_esp_hal.h"
+#include "bytebeam_ota.h"
+#include "bytebeam_action.h"
+#include "bytebeam_client.h"
 
 static int ota_img_data_len = 0;
 static int ota_update_completed = 0;

@@ -1,6 +1,8 @@
 #ifndef BYTEBEAM_ESP_HAL_H
 #define BYTEBEAM_ESP_HAL_H
 
+#include "bytebeam_client.h"
+
 int bytebeam_hal_mqtt_subscribe(bytebeam_client_handle_t client, char *topic, int qos);
 int bytebeam_hal_mqtt_unsubscribe(bytebeam_client_handle_t client, char *topic);
 int bytebeam_hal_mqtt_publish(bytebeam_client_handle_t client, char *topic, char *message, int length, int qos);
