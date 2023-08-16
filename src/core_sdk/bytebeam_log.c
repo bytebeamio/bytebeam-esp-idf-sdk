@@ -1,5 +1,5 @@
 #include "cJSON.h"
-#include "bytebeam_esp_hal.h"
+#include "bytebeam_hal.h"
 #include "bytebeam_stream.h"
 #include "bytebeam_log.h"
 

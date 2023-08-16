@@ -1,6 +1,6 @@
 #include "cJSON.h"
 #include "sys/time.h"
-#include "bytebeam_esp_hal.h"
+#include "bytebeam_hal.h"
 #include "bytebeam_action.h"
 
 static int function_handler_index = 0;

@@ -1,7 +1,7 @@
 #include "cJSON.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-#include "bytebeam_esp_hal.h"
+#include "bytebeam_hal.h"
 #include "bytebeam_action.h"
 #include "bytebeam_ota.h"
 
