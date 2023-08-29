@@ -1,24 +1,22 @@
 #include <stdio.h>
-#include "mqtt_client.h"
-#include "esp_log.h"
-#include "esp_ota_ops.h"
-#include "esp_http_client.h"
-#include "esp_https_ota.h"
-#include "bytebeam_sdk.h"
-#include "bytebeam_esp_hal.h"
-#include "math.h"
-#include "string.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-#include "esp_system.h"
+#include "esp_timer.h"
+#include "esp_https_ota.h"
 #include "esp_idf_version.h"
+#include "esp_spiffs.h"
+#include "esp_vfs_fat.h"
+#include "bytebeam_esp_hal.h"
+#include "bytebeam_ota.h"
+#include "bytebeam_action.h"
+#include "bytebeam_client.h"
 
 static int ota_img_data_len = 0;
 static int ota_update_completed = 0;
 static char ota_action_id_str[BYTEBEAM_ACTION_ID_STR_LEN] = "";
 static bytebeam_client_t *ota_client = NULL;
 
-static const char *TAG_BYTE_BEAM_ESP_HAL = "BYTEBEAM_SDK";
+static const char *TAG = "BYTEBEAM_HAL";
 
 int bytebeam_hal_mqtt_subscribe(bytebeam_client_handle_t client, char *topic, int qos)
 {
@@ -51,29 +49,29 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
     switch (evt->event_id) {
     case HTTP_EVENT_ERROR:
-        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_ERROR");
+        BB_LOGE(TAG, "HTTP_EVENT_ERROR");
         break;
 
     case HTTP_EVENT_ON_CONNECTED:
-        ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_ON_CONNECTED");
+        BB_LOGD(TAG, "HTTP_EVENT_ON_CONNECTED");
         break;
 
     case HTTP_EVENT_HEADER_SENT:
-        ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_HEADER_SENT");
+        BB_LOGD(TAG, "HTTP_EVENT_HEADER_SENT");
         break;
 
     case HTTP_EVENT_ON_HEADER:
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
+        BB_LOGI(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
         break;
 
     case HTTP_EVENT_ON_DATA:
-        ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+        BB_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
         downloaded_data_len = downloaded_data_len + evt->data_len;
         update_progress_percent = (((float)downloaded_data_len / (float)ota_img_data_len) * 100.00);
 
         if (update_progress_percent == loop_var) {
-            ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "update_progress_percent : %d", update_progress_percent);
-            ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "ota_action_id : %s", ota_action_id);
+            BB_LOGD(TAG, "update_progress_percent : %d", update_progress_percent);
+            BB_LOGD(TAG, "ota_action_id : %s", ota_action_id);
 
             // If we are done, change the status to downloaded
             if(update_progress_percent == 100) {
@@ -82,7 +80,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
             // publish the OTA progress status
             if(bytebeam_publish_action_status(ota_client, ota_action_id, update_progress_percent, update_progress_status, "") != 0) {
-                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA progress status");
+                BB_LOGE(TAG, "Failed to publish OTA progress status");
             }
 
             if (loop_var == 100) {
@@ -98,16 +96,16 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         break;
 
     case HTTP_EVENT_ON_FINISH:
-        ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_ON_FINISH");
+        BB_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
         break;
 
     case HTTP_EVENT_DISCONNECTED:
-        ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_DISCONNECTED");
+        BB_LOGD(TAG, "HTTP_EVENT_DISCONNECTED");
         break;
 	
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     case HTTP_EVENT_REDIRECT:
-        ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_REDIRECT");
+        BB_LOGD(TAG, "HTTP_EVENT_REDIRECT");
         break;
 #endif
     }
@@ -119,7 +117,7 @@ esp_err_t _test_event_handler(esp_http_client_event_t *evt)
 {
     switch (evt->event_id) {
     case HTTP_EVENT_ERROR:
-        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "HTTP_EVENT_ERROR");
+        BB_LOGE(TAG, "HTTP_EVENT_ERROR");
         break;
     case HTTP_EVENT_ON_DATA:
         ota_img_data_len = ota_img_data_len + evt->data_len;
@@ -164,13 +162,13 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
     esp_err_t err = esp_http_client_perform(client);
 
     if (err == ESP_OK) {
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "content_length = %d", ota_img_data_len);
+        BB_LOGI(TAG, "content_length = %d", ota_img_data_len);
     } else {
         return -1;
     }
 
     esp_http_client_cleanup(client);
-    ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "The URL is:%s", config.url);
+    BB_LOGI(TAG, "The URL is:%s", config.url);
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     err = esp_https_ota(&ota_config);
@@ -180,10 +178,10 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
         int temp_var = snprintf(ota_error_str, max_len, "Error (%d): %s", err, esp_err_to_name(err));
 
         if (temp_var >= max_len) {
-            ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "OTA error size exceeded buffer size");
+            BB_LOGE(TAG, "OTA error size exceeded buffer size");
         }
 
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "HTTP_UPDATE_FAILED %s", ota_error_str);
+        BB_LOGI(TAG, "HTTP_UPDATE_FAILED %s", ota_error_str);
         return -1;
     }
 #else
@@ -194,10 +192,10 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
         int temp_var = snprintf(ota_error_str, max_len, "Error (%d): %s", err, esp_err_to_name(err));
 
         if (temp_var >= max_len) {
-            ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "OTA error size exceeded buffer size");
+            BB_LOGE(TAG, "OTA error size exceeded buffer size");
         }
 
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "HTTP_UPDATE_FAILED %s", ota_error_str);
+        BB_LOGI(TAG, "HTTP_UPDATE_FAILED %s", ota_error_str);
         return -1;
     }
 #endif
@@ -208,7 +206,7 @@ int bytebeam_hal_ota(bytebeam_client_t *bytebeam_client, char *ota_url)
 static void log_error_if_nonzero(const char *message, int error_code)
 {
     if (error_code != 0) {
-        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Last error %s: 0x%x", message, error_code);
+        BB_LOGE(TAG, "Last error %s: 0x%x", message, error_code);
     }
 }
 
@@ -224,7 +222,7 @@ static void log_error_if_nonzero(const char *message, int error_code)
  */
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-    ESP_LOGD(TAG_BYTE_BEAM_ESP_HAL, "Event dispatched from event loop base=%s, event_id=%d", base, (int)event_id);
+    BB_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, (int)event_id);
 
     esp_mqtt_event_handle_t event = event_data;
     bytebeam_client_handle_t client = event->client;
@@ -233,64 +231,64 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_CONNECTED");
+        BB_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         msg_id = bytebeam_subscribe_to_actions(bytebeam_client->device_cfg, client);
 
         if (msg_id != -1) {
-            ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT SUBSCRIBED!! Msg ID:%d", msg_id);
+            BB_LOGI(TAG, "MQTT SUBSCRIBED!! Msg ID:%d", msg_id);
         } else {
-            ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "MQTT SUBSCRIBE FAILED");
+            BB_LOGE(TAG, "MQTT SUBSCRIBE FAILED");
         }
 
         bytebeam_client->connection_status = 1;
         break;
 
     case MQTT_EVENT_DISCONNECTED:
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_DISCONNECTED");
+        BB_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
         bytebeam_client->connection_status = 0;
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        BB_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
         break;
 
     case MQTT_EVENT_UNSUBSCRIBED:
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+        BB_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
         break;
 
     case MQTT_EVENT_PUBLISHED:
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+        BB_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
         break;
 
     case MQTT_EVENT_DATA:
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_DATA");
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "DATA=%.*s\r\n", event->data_len, event->data);
+        BB_LOGI(TAG, "MQTT_EVENT_DATA");
+        BB_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        BB_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
 
         ret_val = bytebeam_handle_actions(event->data, event->client, bytebeam_client);
 
         if (ret_val != 0) {
-            ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "BYTEBEAM HANDLE ACTIONS FAILED");
+            BB_LOGE(TAG, "BYTEBEAM HANDLE ACTIONS FAILED");
         } else {
-            ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "BYTEBEAM HANDLE ACTIONS SUCCESS!!");
+            BB_LOGI(TAG, "BYTEBEAM HANDLE ACTIONS SUCCESS!!");
         }
 
         break;
 
     case MQTT_EVENT_ERROR:
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "MQTT_EVENT_ERROR");
+        BB_LOGI(TAG, "MQTT_EVENT_ERROR");
 
         if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
             log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
             log_error_if_nonzero("reported from tls stack", event->error_handle->esp_tls_stack_err);
             log_error_if_nonzero("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
-            ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
+            BB_LOGI(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
         }
 
         break;
 
     default:
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Other event id:%d", event->event_id);
+        BB_LOGI(TAG, "Other event id:%d", event->event_id);
         break;
     }
 }
@@ -301,12 +299,12 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
     nvs_handle_t temp_nv_handle;
     esp_err_t err;
 
-    ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "[APP] Free memory: %d bytes", (int)esp_get_free_heap_size());
+    BB_LOGI(TAG, "[APP] Free memory: %d bytes", (int)esp_get_free_heap_size());
 
     bytebeam_client->client = esp_mqtt_client_init(&bytebeam_client->mqtt_cfg);
 
     if (bytebeam_client->client == NULL) {
-        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "MQTT Client initialization failed");
+        BB_LOGE(TAG, "MQTT Client initialization failed");
         return -1;
     }
 
@@ -314,7 +312,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
     err = esp_mqtt_client_register_event(bytebeam_client->client, ESP_EVENT_ANY_ID, mqtt_event_handler, bytebeam_client);
 
     if (err != ESP_OK) {
-        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to register MQTT event callback");
+        BB_LOGE(TAG, "Failed to register MQTT event callback");
         return -1;
     }
 
@@ -322,7 +320,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
 
     if(err != ESP_OK)
     {
-        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "NVS flash init failed.");
+        BB_LOGE(TAG, "NVS flash init failed.");
         return -1;
     }
 
@@ -330,7 +328,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
 
     if (err != ESP_OK) 
     {
-        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to open NVS Storage");
+        BB_LOGE(TAG, "Failed to open NVS Storage");
         return -1;
     }
 
@@ -347,7 +345,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
 
             if (temp_err != ESP_OK) 
             {
-                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to reset the OTA update flag in NVS");
+                BB_LOGE(TAG, "Failed to reset the OTA update flag in NVS");
                 return -1;
             }
 
@@ -355,7 +353,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
 
             if (temp_err != ESP_OK) 
             {
-                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to commit the OTA update flag in NVS");
+                BB_LOGE(TAG, "Failed to commit the OTA update flag in NVS");
                 return -1;
             }
 
@@ -364,7 +362,7 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
 
             if (temp_err != ESP_OK) 
             {
-                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to retreieve the OTA action id from NVS");
+                BB_LOGE(TAG, "Failed to retreieve the OTA action id from NVS");
                 return -1;
             }
 
@@ -373,19 +371,19 @@ int bytebeam_hal_init(bytebeam_client_t *bytebeam_client)
 
             if(temp_var >= max_len)
             {
-                ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "OTA action id string size exceeded max length of buffer");
+                BB_LOGE(TAG, "OTA action id string size exceeded max length of buffer");
                 return -1;
             }
 
             ota_update_completed = 1;
-            ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Reboot after successful OTA update");
+            BB_LOGI(TAG, "Reboot after successful OTA update");
         } else {
-            ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Normal reboot");
+            BB_LOGI(TAG, "Normal reboot");
         }
     }
 
     if (err == ESP_ERR_NVS_NOT_FOUND) {
-        ESP_LOGI(TAG_BYTE_BEAM_ESP_HAL, "Device contains factory Firmware\n");
+        BB_LOGI(TAG, "Device contains factory Firmware\n");
     }
 
     nvs_close(temp_nv_handle);
@@ -419,13 +417,13 @@ int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client)
         ota_update_completed = 0;
 
         if ((bytebeam_publish_action_completed(bytebeam_client, ota_action_id_str)) != 0) {
-            ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish OTA complete status");
+            BB_LOGE(TAG, "Failed to publish OTA complete status");
         }
     }
 
     // publish the device heartbeat
     if (bytebeam_publish_device_heartbeat(bytebeam_client) != 0) {
-        ESP_LOGE(TAG_BYTE_BEAM_ESP_HAL, "Failed to publish device heartbeat");
+        BB_LOGE(TAG, "Failed to publish device heartbeat");
     }
 
     return 0;
@@ -442,4 +440,120 @@ int bytebeam_hal_stop_mqtt(bytebeam_client_t *bytebeam_client)
     }
 
     return 0;
+}
+
+int bytebeam_hal_spiffs_mount()
+{  
+    esp_err_t err;
+
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = true
+    };
+
+    err = esp_vfs_spiffs_register(&conf);
+
+    if (err != ESP_OK)
+    {
+        switch(err)
+        {
+            case ESP_FAIL:
+                BB_LOGE(TAG, "Failed to mount or format SPIFFS");
+                break;
+
+            case ESP_ERR_NOT_FOUND:
+                BB_LOGE(TAG, "Unable to find SPIFFS partition");
+                break;
+
+            default:
+                BB_LOGE(TAG, "Failed to register SPIFFS partition (%s)", esp_err_to_name(err));
+        }
+
+        return -1;
+    }
+
+    return 0;
+}
+
+int bytebeam_hal_spiffs_unmount()
+{
+    esp_err_t err;
+
+    err = esp_vfs_spiffs_unregister(NULL);
+
+    if (err != ESP_OK) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int bytebeam_hal_fatfs_mount()
+{
+    esp_err_t err;
+
+    const esp_vfs_fat_mount_config_t conf = {
+            .max_files = 4,
+            .format_if_mount_failed = false,
+            .allocation_unit_size = CONFIG_WL_SECTOR_SIZE
+    };
+
+    err = esp_vfs_fat_spiflash_mount_ro("/spiflash", "storage", &conf);
+
+    if (err != ESP_OK)
+    {
+        switch(err)
+        {
+            case ESP_FAIL:
+                BB_LOGE(TAG, "Failed to mount FATFS");
+                break;
+
+            case ESP_ERR_NOT_FOUND:
+                BB_LOGE(TAG, "Unable to find FATFS partition");
+                break;
+
+            default:
+                BB_LOGE(TAG, "Failed to register FATFS (%s)", esp_err_to_name(err));
+        }
+
+        return -1;
+    }
+
+    return 0;
+}
+
+int bytebeam_hal_fatfs_unmount()
+{
+    esp_err_t err;
+
+    err = esp_vfs_fat_spiflash_unmount_ro("/spiflash", "storage");
+
+    if (err != ESP_OK) {
+        return -1;
+    }
+
+    return 0;
+}
+
+unsigned long long bytebeam_hal_get_epoch_millis()
+{
+    struct timeval te;
+    gettimeofday(&te, NULL); // get current time
+    unsigned long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000;
+    return milliseconds;
+}
+
+bytebeam_reset_reason_t bytebeam_hal_get_reset_reason()
+{
+    bytebeam_reset_reason_t reboot_reason_id = esp_reset_reason();
+    return reboot_reason_id;
+}
+
+long long bytebeam_hal_get_uptime_ms()
+{
+    long long uptime = esp_timer_get_time();
+    uptime = uptime/1000;
+    return uptime;
 }
