@@ -28,31 +28,17 @@
 #include "cJSON.h"
 #include "bytebeam_sdk.h"
 
-// this macro is used to specify the delay for 10 sec.
-#define APP_DELAY_TEN_SEC 10000u
+// this macro is used to specify the delay for 30 sec.
+#define APP_DELAY_THIRTHY_SEC 30000u
 
-// this macro is used to specify the maximum length of device status string
-#define DEVICE_STATUS_STR_LEN 200
+static int config_status_period = APP_DELAY_THIRTHY_SEC;
 
-static int config_status_period = APP_DELAY_TEN_SEC;
-
-static char device_status[DEVICE_STATUS_STR_LEN] = "";
 static char device_shadow_stream[] = "device_shadow";
+static char device_shadow_status[] = "Device Status Active!";
 
 static bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_PUSH_DATA_EXAMPLE";
-
-static void set_device_status(void)
-{
-    int max_len = DEVICE_STATUS_STR_LEN;
-    int temp_var = snprintf(device_status, max_len, "Device Status %s !", "Working");
-
-    if(temp_var >= max_len)
-    {
-        ESP_LOGE(TAG, "device status string size exceeded max length of buffer");
-    }
-}
 
 static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 {   
@@ -120,7 +106,7 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 
     cJSON_AddItemToObject(device_shadow_json, "sequence", sequence_json);
 
-    device_status_json = cJSON_CreateString(device_status);
+    device_status_json = cJSON_CreateString(device_shadow_status);
 
     if(device_status_json == NULL)
     {
@@ -156,21 +142,20 @@ static int publish_device_shadow(bytebeam_client_t *bytebeam_client)
 static void app_start(bytebeam_client_t *bytebeam_client)
 {
     int ret_val = 0;
+    int publish_counter = 0;
 
     while (1) 
     {
-        // set device status
-        set_device_status();
+        publish_counter++;
+        vTaskDelay(config_status_period / portTICK_PERIOD_MS);
 
         // pulish device status to device shadow
         ret_val = publish_device_shadow(bytebeam_client);
 
         if (ret_val != 0)
         {
-            ESP_LOGE(TAG, "Publish to device shadow failed");
+            ESP_LOGE(TAG, "%d:: Publish to device shadow failed", publish_counter);
         }
-
-        vTaskDelay(config_status_period / portTICK_PERIOD_MS);
     }
 }
 
