@@ -33,8 +33,8 @@ To change `LED GPIO Configuration` head over to [led_driver.h](main/include/led_
 ## Build Flash Monitor
 
 ```
-# build the binary file
-$ build_app.bat
+# build the binary for the target (say esp32)
+$ build_app.bat esp32
 
 # flash and monitor the app
 $ flash_monitor.bat COM17
