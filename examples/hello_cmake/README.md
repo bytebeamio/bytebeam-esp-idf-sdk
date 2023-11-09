@@ -37,7 +37,7 @@ To change `LED GPIO Configuration` head over to [led_driver.h](main/include/led_
 $ build_app.bat esp32
 
 # flash and monitor the app
-$ flash_monitor.bat COM17
+$ flash_monitor.bat COM
 ```
 
 (To exit the serial monitor, type Ctrl-].)

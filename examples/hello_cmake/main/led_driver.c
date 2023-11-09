@@ -23,7 +23,7 @@ void blink_led(int s_led_state)
     }
 }
 
-oid configure_led(void)
+void configure_led(void)
 {
     ESP_LOGI(TAG, "Example configured to blink addressable LED!");
     /* LED strip initialization with the GPIO and pixels number*/
