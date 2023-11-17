@@ -66,4 +66,64 @@ menu "Bytebeam"
             help
                 Provide the file name for the device provisioning
     endmenu
+
+    menu "Bytebeam Logging"
+        config BYTEBEAM_CLOUD_LOGGING_IS_ENABLED
+            bool "Enable cloud logging"
+            help
+                Enable cloud logging
+        
+        config BYTEBEAM_CLOUD_LOGGING_STREAM
+            string "Cloud logging log stream"
+            depends on BYTEBEAM_CLOUD_LOGGING_IS_ENABLED
+            default "logs"
+            help
+                Provide the cloud logging stream name
+
+        choice BYTEBEAM_LOGGING_LEVEL
+            prompt "Logging level"
+            default BYTEBEAM_LOGGING_LEVEL_IS_INFO
+            help
+                Select the bytebeam logging level
+    
+            config BYTEBEAM_LOGGING_LEVEL_IS_NONE
+                bool "No Output"
+                help
+                    None log level
+            
+            config BYTEBEAM_LOGGING_LEVEL_IS_ERROR
+                bool "Error"
+                help
+                    Error log level
+                    
+            config BYTEBEAM_LOGGING_LEVEL_IS_WARN
+                bool "Warning"
+                help
+                    Warning log level
+                
+            config BYTEBEAM_LOGGING_LEVEL_IS_INFO
+                bool "Info"
+                help
+                    Info log level
+
+            config BYTEBEAM_LOGGING_LEVEL_IS_DEBUG
+                bool "Debug"
+                help
+                    Debug log level
+            
+            config BYTEBEAM_LOGGING_LEVEL_IS_VERBOSE
+                bool "Verbose"
+                help
+                    Verbose log level                    
+        endchoice
+
+        config BYTEBEAM_LOGGING_LEVEL
+            int
+            default 0 if BYTEBEAM_LOGGING_LEVEL_IS_NONE
+            default 1 if BYTEBEAM_LOGGING_LEVEL_IS_ERROR
+            default 2 if BYTEBEAM_LOGGING_LEVEL_IS_WARN
+            default 3 if BYTEBEAM_LOGGING_LEVEL_IS_INFO
+            default 4 if BYTEBEAM_LOGGING_LEVEL_IS_DEBUG
+            default 5 if BYTEBEAM_LOGGING_LEVEL_IS_VERBOSE
+    endmenu
 endmenu

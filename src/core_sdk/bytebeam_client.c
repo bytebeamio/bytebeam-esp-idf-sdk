@@ -338,7 +338,7 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
     bytebeam_log_client_set(NULL);
 
     // clearing bytebeam log level
-    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_INFO);
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_NONE);
 
     // clearing certifciate json object
     if(bytebeam_cert_json != NULL) {
@@ -401,7 +401,12 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
     }
 
     bytebeam_log_client_set(bytebeam_client);
-    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_INFO);
+    bytebeam_log_level_set(CONFIG_BYTEBEAM_LOGGING_LEVEL);
+
+    #if CONFIG_BYTEBEAM_CLOUD_LOGGING_IS_ENABLED
+        bytebeam_enable_cloud_logging()
+        bytebeam_log_stream_set(CONFIG_BYTEBEAM_CLOUD_LOGGING_STREAM);
+    #endif
 
     BB_LOGI(TAG, "Bytebeam Client Initialized !!");
 
