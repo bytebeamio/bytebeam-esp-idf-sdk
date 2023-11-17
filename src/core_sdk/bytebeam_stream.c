@@ -242,3 +242,35 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     return ret_val;
 }
+
+void bytebeam_user_thread_entry(void *pv)
+{
+    bytebeam_err_t err_code;
+    bytebeam_client_t *bytebeam_client = (bytebeam_client_t*) pv;
+
+    while(1)
+    {
+        BB_LOGI(TAG, "Device Shadow Message.\n");
+        
+        err_code = bytebeam_publish_device_shadow(bytebeam_client);
+
+        if(err_code != BB_SUCCESS)
+        {
+            BB_LOGE(TAG, "Failed to push Device Shadow Seq : %llu\n", bytebeam_client->device_shadow.stream.sequence);
+        }
+
+        vTaskDelay(CONFIG_DEVICE_SHADOW_PUSH_INTERVAL * 1000 / portTICK_PERIOD_MS);
+    }
+}
+
+void bytebeam_mqtt_thread_entry(void *pv)
+{
+    bytebeam_err_t err_code;
+    bytebeam_client_t *bytebeam_client = (bytebeam_client_t*) pv;
+
+    while(1)
+    {
+        BB_LOGI(TAG, "Bytebeam MQTT Thread\n");
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+}

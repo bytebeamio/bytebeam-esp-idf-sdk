@@ -422,10 +422,8 @@ int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client)
         }
     }
 
-    // publish the device heartbeat
-    if (bytebeam_publish_device_shadow(bytebeam_client) != 0) {
-        BB_LOGE(TAG, "Failed to publish device heartbeat");
-    }
+    xTaskCreate(bytebeam_user_thread_entry, "Bytebeam User Thread", 4096, bytebeam_client, 2, NULL);
+    xTaskCreate(bytebeam_mqtt_thread_entry, "Bytebeam MQTT Thread", 8192, bytebeam_client, 2, NULL);
 
     return 0;
 }

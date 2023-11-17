@@ -29,4 +29,7 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
  */
 bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client);
 
+void bytebeam_user_thread_entry(void *pv);
+void bytebeam_mqtt_thread_entry(void *pv);
+
 #endif /* BYTEBEAM_STREAM_H */

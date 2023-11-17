@@ -2,6 +2,7 @@
 #include "bytebeam_hal.h"
 #include "bytebeam_log.h"
 #include "bytebeam_action.h"
+#include "bytebeam_stream.h"
 #include "bytebeam_client.h"
 
 static cJSON *bytebeam_cert_json = NULL;
