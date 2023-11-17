@@ -31,7 +31,6 @@
 #include "led_strip.h"
 #include "sdkconfig.h"
 
-
 // this macro is used to specify the delay for 1 sec.
 #define APP_DELAY_ONE_SEC 1000u
 
@@ -315,10 +314,8 @@ int handle_toggle_led(bytebeam_client_t *bytebeam_client, char *args, char *acti
     return 0;
 }
 
-
 void app_main(void)
 {
-    
     ESP_LOGI(TAG, "[APP] Startup..");
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", (int)esp_get_free_heap_size());
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
@@ -344,13 +341,6 @@ void app_main(void)
 
     // configure the gpio led
     configure_led();
-
-    // setting up the device info i.e to be seen in the device shadow
-    bytebeam_client.device_info.status           = "Device is Up!";
-    bytebeam_client.device_info.software_type    = "toggle-led-app";
-    bytebeam_client.device_info.software_version = "1.0.0";
-    bytebeam_client.device_info.hardware_type    = "ESP32 DevKit V1";
-    bytebeam_client.device_info.hardware_version = "rev1";
 
     // initialize the bytebeam client
     bytebeam_init(&bytebeam_client);

@@ -9,6 +9,7 @@
 #include "bytebeam_esp_hal.h"
 #include "bytebeam_ota.h"
 #include "bytebeam_action.h"
+#include "bytebeam_stream.h"
 #include "bytebeam_client.h"
 
 static int ota_img_data_len = 0;
@@ -422,7 +423,7 @@ int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client)
     }
 
     // publish the device heartbeat
-    if (bytebeam_publish_device_heartbeat(bytebeam_client) != 0) {
+    if (bytebeam_publish_device_shadow(bytebeam_client) != 0) {
         BB_LOGE(TAG, "Failed to publish device heartbeat");
     }
 

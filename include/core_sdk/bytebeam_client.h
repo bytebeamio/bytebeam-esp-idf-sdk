@@ -1,6 +1,7 @@
 #ifndef BYTEBEAM_CLIENT_H
 #define BYTEBEAM_CLIENT_H
 
+#include "cJSON.h"
 #include "mqtt_client.h"
 
 /*This macro is used to specify the maximum length of bytebeam broker url string*/
@@ -57,13 +58,21 @@ typedef struct bytebeam_action_functions_map {
     int (*func)(struct bytebeam_client_t *bytebeam_client, char *args, char *action_id);
 } bytebeam_action_functions_map_t;
 
-typedef struct bytebeam_device_info {
+typedef struct bytebeam_device_shadow_stream {
+    uint64_t sequence;
+    unsigned long long milliseconds;
     const char *status;
     const char *software_type;
     const char *software_version;
     const char *hardware_type;
     const char *hardware_version;
-} bytebeam_device_info_t;
+    const char* reboot_reason;
+    long long uptime;
+} bytebeam_device_shadow_stream_t;
+
+typedef struct bytebeam_device_shadow {
+    bytebeam_device_shadow_stream_t stream;
+} bytebeam_device_shadow_t;
 
 /**
  * @struct bytebeam_client_t
@@ -80,11 +89,11 @@ typedef struct bytebeam_device_info {
  * Connection status of MQTT client instance.
  */
 typedef struct bytebeam_client {
-    bytebeam_device_info_t device_info;
     bytebeam_device_config_t device_cfg;
     bytebeam_client_handle_t client;
     bytebeam_client_config_t mqtt_cfg;
     bytebeam_action_functions_map_t action_funcs[BYTEBEAM_NUMBER_OF_ACTIONS];
+    bytebeam_device_shadow_t device_shadow;
     int connection_status;
     bool use_device_config_data;
 } bytebeam_client_t;

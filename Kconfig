@@ -1,30 +1,69 @@
 menu "Bytebeam"
-
-    choice BYTEBEAM_PROVISIONING_FILESYSTEM
-        prompt "Provisioning file system"
-        default BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
-        help
-            Select the file system for the device provisioning
-
-        config BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
-            bool "SPIFFS"
+    menu "Device Shaodw"
+        config DEVICE_SHADOW_STATUS
+            string "Status"
+            default "Device is Online"
             help
-                Use spiffs file system for device provisioning
-
-        config BYTEBEAM_PROVISION_DEVICE_FROM_LITTLEFS
-            bool "LITTLEFS"
+                Provide the status
+        
+        config DEVICE_SHADOW_SOFTWARE_TYPE
+            string "Software Type"
+            default "bytebeam-app"
             help
-                Use littlefs file system for device provisioning
+                Provide the software type
 
-        config BYTEBEAM_PROVISION_DEVICE_FROM_FATFS
-            bool "FATFS"
+        config DEVICE_SHADOW_SOFTWARE_VERSION
+            string "Software Version"
+            default "v0.1.0"
             help
-                Use fatfs file system for device provisioning
-    endchoice
+                Provide the software version
+        
+        config DEVICE_SHADOW_HARDWARE_TYPE
+            string "Hardware Type"
+            default "Bytebeam ESP32"
+            help
+                Provide the hardware type
+
+        config DEVICE_SHADOW_HARDWARE_VERSION
+            string "Hardware Version"
+            default "rev1"
+            help
+                Provide the hardware version
     
-    config BYTEBEAM_PROVISIONING_FILENAME
-        string "Provisioning file name"
-        default "device_config.json"
-        help
-            Provide the file name for the device provisioning
+        config DEVICE_SHADOW_PUSH_INTERVAL
+            int "Push Interval (In Seconds)"
+            default 40
+            help
+                Provide the heartbeat push interval
+    endmenu
+    
+    menu "Device Provisioning"  
+        choice DEVICE_PROVISIONING_FILESYSTEM
+            prompt "Provisioning file system"
+            default DEVICE_PROVISIONING_FILESYSTEM_IS_SPIFFS
+            help
+                Select the file system for the device provisioning
+    
+            config DEVICE_PROVISIONING_FILESYSTEM_IS_SPIFFS
+                bool "SPIFFS"
+                help
+                    Use spiffs file system for device provisioning
+            
+            config DEVICE_PROVISIONING_FILESYSTEM_IS_FATFS
+                bool "FATFS"
+                help
+                    Use fatfs file system for device provisioning
+
+            config DEVICE_PROVISIONING_FILESYSTEM_IS_LITTLEFS
+                bool "LITTLEFS"
+                help
+                    Use littlefs file system for device provisioning
+        endchoice
+                    
+        config DEVICE_PROVISIONING_FILENAME
+            string "Provisioning file name"
+            default "device_config.json"
+            help
+                Provide the file name for the device provisioning
+    endmenu
 endmenu

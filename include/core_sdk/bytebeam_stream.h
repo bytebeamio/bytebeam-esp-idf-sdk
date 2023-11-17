@@ -17,4 +17,16 @@
  */
 bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload);
 
+/**
+ * @brief Publish device shadow message
+ *
+ * @param[in] bytebeam_client     bytebeam client handle
+ * 
+ * @return
+ *      BB_SUCCESS: Message publish successful
+ *      BB_FAILURE: Message publish failed
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client, stream_name, or payload is NULL
+ */
+bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client);
+
 #endif /* BYTEBEAM_STREAM_H */

@@ -14,7 +14,7 @@ static int read_device_config_file()
     int ret_code = 0;
     char config_fname[100] = "";
 
-#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
+#if CONFIG_DEVICE_PROVISIONING_FILESYSTEM_IS_SPIFFS
     BB_LOGI(TAG, "SPIFFS file system detected !");
 
     ret_code = bytebeam_hal_spiffs_mount();
@@ -25,10 +25,10 @@ static int read_device_config_file()
     }
 
     strcat(config_fname, "/spiffs/");
-    strcat(config_fname, CONFIG_BYTEBEAM_PROVISIONING_FILENAME);
+    strcat(config_fname, CONFIG_DEVICE_PROVISIONING_FILENAME);
 #endif
 
-#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_FATFS
+#if CONFIG_DEVICE_PROVISIONING_FILESYSTEM_IS_FATFS
     BB_LOGI(TAG, "FATFS file system detected !");
 
     ret_code = bytebeam_hal_fatfs_mount();
@@ -40,10 +40,10 @@ static int read_device_config_file()
 
     // generate the device config file name
     strcat(config_fname, "/spiflash/");
-    strcat(config_fname, CONFIG_BYTEBEAM_PROVISIONING_FILENAME);
+    strcat(config_fname, CONFIG_DEVICE_PROVISIONING_FILENAME);
 #endif
 
-#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_LITTLEFS
+#if CONFIG_DEVICE_PROVISIONING_FILESYSTEM_IS_LITTLEFS
     BB_LOGI(TAG, "LITTLEFS file system detected !");
 
     // Just print the log and return :)
@@ -95,7 +95,7 @@ static int read_device_config_file()
 
     fclose(file);
 
-#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
+#if CONFIG_DEVICE_PROVISIONING_FILESYSTEM_IS_SPIFFS
     ret_code =  bytebeam_hal_spiffs_unmount();
 
     if(ret_code != 0)
@@ -105,12 +105,7 @@ static int read_device_config_file()
     }
 #endif
 
-#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_LITTLEFS
-    // de-initalize the LITTLEFS file system
-    // nothing to do here yet
-#endif
-
-#if CONFIG_BYTEBEAM_PROVISION_DEVICE_FROM_FATFS
+#if CONFIG_DEVICE_PROVISIONING_FILESYSTEM_IS_FATFS
     ret_code =  bytebeam_hal_spiffs_unmount();
 
     if(ret_code != 0)
@@ -118,7 +113,11 @@ static int read_device_config_file()
         BB_LOGE(TAG, "Failed to unregister FATFS (%d)", ret_code);
         return -1;
     }
-    
+#endif
+
+#if CONFIG_DEVICE_PROVISIONING_FILESYSTEM_IS_LITTLEFS
+    // de-initalize the LITTLEFS file system
+    // nothing to do here yet
 #endif
 
     return 0;
