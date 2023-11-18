@@ -1,7 +1,6 @@
 #ifndef BYTEBEAM_CLIENT_H
 #define BYTEBEAM_CLIENT_H
 
-#include "cJSON.h"
 #include "mqtt_client.h"
 
 /*This macro is used to specify the maximum length of bytebeam broker url string*/
