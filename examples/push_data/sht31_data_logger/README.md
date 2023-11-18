@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
-# Bytebeam Temp Humid Example
+# Bytebeam SHT31 Data Logger Example
 This example demonnstrates how to push the sht31 sensor readings to Bytebeam IoT Platform.
 
 ## Hardware Required
