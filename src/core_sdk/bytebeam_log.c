@@ -92,8 +92,10 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     }
 
     // if cloud logging is disabled, we don't need to push just return :)
-    if(!is_cloud_logging_enable) {
-      return BB_SUCCESS;
+    if(!is_cloud_logging_enable) 
+    {
+        BB_HAL_LOGE(TAG, "Bytebeam cloud logging is not enabled");
+        return BB_FAILURE;
     }
 
     va_list args;

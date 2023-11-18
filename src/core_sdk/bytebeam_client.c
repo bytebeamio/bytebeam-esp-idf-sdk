@@ -404,7 +404,7 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
     bytebeam_log_level_set(CONFIG_BYTEBEAM_LOGGING_LEVEL);
 
     #if CONFIG_BYTEBEAM_CLOUD_LOGGING_IS_ENABLED
-        bytebeam_enable_cloud_logging()
+        bytebeam_enable_cloud_logging();
         bytebeam_log_stream_set(CONFIG_BYTEBEAM_CLOUD_LOGGING_STREAM);
     #endif
 

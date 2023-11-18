@@ -1,5 +1,5 @@
 menu "Bytebeam"
-    menu "Device Shaodw"
+    menu "Device Shadow"
         config DEVICE_SHADOW_STATUS
             string "Status"
             default "Device is Online"

@@ -8,13 +8,12 @@
 #define BYTEBEAM_LOG_STREAM_STR_LEN 20
 
 #define BB_LOGX(BB_HAL_LOGX, level, tag, fmt, ...)                                            \
-     do {                                                                                     \
+    do {                                                                                      \
         const char* levelStr = bytebeam_log_level_str[level];                                 \
         if(level <= bytebeam_log_level_get()) {                                               \
+            BB_HAL_LOGX(tag, fmt, ##__VA_ARGS__);                                             \
             if (bytebeam_log_publish(levelStr, tag, fmt, ##__VA_ARGS__) == BB_FAILURE) {      \
-                BB_HAL_LOGE(tag, "Failed To Publish Bytebeam Log !");                         \
-            } else {                                                                          \
-                BB_HAL_LOGX(tag, fmt, ##__VA_ARGS__);                                         \
+                BB_HAL_LOGE(tag, "Failed To publish log to bytebeam.");                       \
             }                                                                                 \
         }                                                                                     \
     } while (0)

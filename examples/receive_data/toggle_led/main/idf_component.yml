@@ -2,6 +2,6 @@
 dependencies:
   bytebeamio/bytebeam-esp-idf-sdk: 
     version: "*"
-    override_path: "../../../"
+    override_path: "../../../../"
   espressif/led_strip: 
     version: "*"
