@@ -45,8 +45,8 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 {
     bytebeam_err_t ret_val = 0;
     bytebeam_reset_reason_t reboot_reason_id;
-
-    cJSON *device_shadow_json_list = NULL;
+    static char device_shadow_json_str[512 + CONFIG_DEVICE_SHADOW_CUSTOM_JSON_STR_LEN] = "";
+    
     cJSON *device_shadow_json = NULL;
     cJSON *sequence_json = NULL;
     cJSON *timestamp_json = NULL;
@@ -60,20 +60,11 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     char *string_json = NULL;
 
-    device_shadow_json_list = cJSON_CreateArray();
-
-    if(device_shadow_json_list == NULL)
-    {
-        BB_HAL_LOGE(TAG, "Json Init failed.");
-        return -1;
-    }
-
     device_shadow_json = cJSON_CreateObject();
 
     if(device_shadow_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add failed.");
-        cJSON_Delete(device_shadow_json_list);
+        BB_HAL_LOGE(TAG, "Json object creation failed.");
         return -1;
     }
 
@@ -82,7 +73,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(bytebeam_client->device_shadow.stream.milliseconds == 0)
     {
         BB_HAL_LOGE(TAG, "failed to get epoch millis.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
@@ -91,7 +82,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(timestamp_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json add time stamp failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
@@ -103,7 +94,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(sequence_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json add sequence id failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
@@ -132,7 +123,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(device_reset_reason_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json add device reboot reason failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
@@ -145,7 +136,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(device_uptime_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json add device uptime failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
@@ -159,7 +150,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(device_status_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json add device status failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
@@ -173,7 +164,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(device_software_type_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json add device software type failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
@@ -187,7 +178,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(device_software_version_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json add device software version failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
@@ -201,7 +192,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(device_hardware_type_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json add device hardware type failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
@@ -215,32 +206,80 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     if(device_hardware_version_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json add device hardware version failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
     }
 
     cJSON_AddItemToObject(device_shadow_json, "Hardware_Version", device_hardware_version_json);
 
-    cJSON_AddItemToArray(device_shadow_json_list, device_shadow_json);
-
-    string_json = cJSON_Print(device_shadow_json_list);
+    string_json = cJSON_Print(device_shadow_json);
 
     if(string_json == NULL)
     {
         BB_HAL_LOGE(TAG, "Json string print failed.");
-        cJSON_Delete(device_shadow_json_list);
+        cJSON_Delete(device_shadow_json);
         return -1;
+    } 
+
+    memset(device_shadow_json_str, 0x00, sizeof(device_shadow_json_str));
+
+    strcpy(device_shadow_json_str, "[");
+    strcat(device_shadow_json_str, string_json);
+
+    // call the device shadow updater if exists
+    if(bytebeam_client->device_shadow.updater != NULL)
+    {
+        bytebeam_client->device_shadow.updater(bytebeam_client);
     }
 
-    BB_HAL_LOGI(TAG, "\nStatus to send:\n%s\n", string_json);
+    // add any additional json if provided
+    if(bytebeam_client->device_shadow.custom_json_str[0] != '\0')
+    {
+        strcat(device_shadow_json_str, ",");
+        strcat(device_shadow_json_str, bytebeam_client->device_shadow.custom_json_str);
+        strcat(device_shadow_json_str, "]");
+    }
+
+    BB_HAL_LOGI(TAG, "\nStatus to send:\n%s\n", device_shadow_json_str);
 
     // publish the json to device shadow stream
-    ret_val = bytebeam_publish_to_stream(bytebeam_client, "device_shadow", string_json);
+    ret_val = bytebeam_publish_to_stream(bytebeam_client, "device_shadow", device_shadow_json_str);
 
-    cJSON_Delete(device_shadow_json_list);
+    cJSON_Delete(device_shadow_json);
     cJSON_free(string_json);
 
     return ret_val;
+}
+
+bytebeam_err_t bytebeam_add_custom_device_shadow(bytebeam_client_t *bytebeam_client, char *custom_json_str)
+{
+    if(bytebeam_client == NULL || custom_json_str == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
+    if(strlen(custom_json_str) >= CONFIG_DEVICE_SHADOW_CUSTOM_JSON_STR_LEN)
+    {
+        BB_HAL_LOGE(TAG, "Custom json size exceeded buffer size");
+        return BB_FAILURE;
+    }
+
+    memset(bytebeam_client->device_shadow.custom_json_str, 0x00, CONFIG_DEVICE_SHADOW_CUSTOM_JSON_STR_LEN);
+    strcpy(bytebeam_client->device_shadow.custom_json_str, custom_json_str);
+
+    return BB_SUCCESS;
+}
+
+bytebeam_err_t bytebeam_register_device_shadow_updater(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *))
+{
+    if(bytebeam_client == NULL || func_ptr == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
+    bytebeam_client->device_shadow.updater = func_ptr;
+
+    return BB_SUCCESS;
 }
 
 void bytebeam_user_thread_entry(void *pv)
@@ -270,7 +309,7 @@ void bytebeam_mqtt_thread_entry(void *pv)
 
     while(1)
     {
-        BB_HAL_LOGI(TAG, "Bytebeam MQTT Thread\n");
+        // BB_HAL_LOGI(TAG, "Bytebeam MQTT Thread\n");
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }

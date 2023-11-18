@@ -70,6 +70,8 @@ typedef struct bytebeam_device_shadow_stream {
 } bytebeam_device_shadow_stream_t;
 
 typedef struct bytebeam_device_shadow {
+    char custom_json_str[CONFIG_DEVICE_SHADOW_CUSTOM_JSON_STR_LEN]; 
+    int (*updater)(struct bytebeam_client_t *bytebeam_client);
     bytebeam_device_shadow_stream_t stream;
 } bytebeam_device_shadow_t;
 

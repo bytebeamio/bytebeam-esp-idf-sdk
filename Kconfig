@@ -29,7 +29,13 @@ menu "Bytebeam"
             default "rev1"
             help
                 Provide the hardware version
-    
+        
+        config DEVICE_SHADOW_CUSTOM_JSON_STR_LEN
+            int "Custom json string len (In Bytes)"
+            default 512
+            help
+                Provide the length of custom device shadow json str
+
         config DEVICE_SHADOW_PUSH_INTERVAL
             int "Push Interval (In Seconds)"
             default 40
