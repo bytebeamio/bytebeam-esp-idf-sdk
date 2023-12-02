@@ -54,7 +54,48 @@ bytebeam_err_t bytebeam_add_custom_device_shadow(bytebeam_client_t *bytebeam_cli
  */
 bytebeam_err_t bytebeam_register_device_shadow_updater(bytebeam_client_t *bytebeam_client, int (*func_ptr)(bytebeam_client_t *));
 
+/**
+ * @brief Initialize batch mqtt client
+ *
+ * @param[in] bytebeam_client     bytebeam client handle
+ * @param[in] stream_name         stream name
+ * 
+ * @return
+ *      BB_SUCCESS: MQTT Batch Initialized Successfully
+ *      BB_NULL_CHECK_FAILURE: If the bytebeam_client or stream_name is NULL
+ *      BB_FAILURE: On failure
+ */
+bytebeam_err_t bytebeam_batch_init(bytebeam_client_t *bytebeam_client, char* stream_name);
+
+/**
+ * @brief MQTT Batch Publish
+ *
+ * @param[in] payload        payload to batch publish
+ * 
+ * @return
+ *      BB_SUCCESS: MQTT Batch Added Successfully
+ *      BB_FAILURE: On failure
+ */
+bytebeam_err_t bytebeam_batch_publish_to_stream(char* payload);
+
+/**
+ * @brief User Data Thread Entry
+ *
+ * @param[in] pv        task argument
+ * 
+ * @return
+ *      
+ */
 void bytebeam_user_thread_entry(void *pv);
+
+/**
+ * @brief MQTT Data Publish Thread
+ *
+ * @param[in] pv        task argument
+ * 
+ * @return
+ *
+ */
 void bytebeam_mqtt_thread_entry(void *pv);
 
 #endif /* BYTEBEAM_STREAM_H */

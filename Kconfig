@@ -132,4 +132,17 @@ menu "Bytebeam"
             default 4 if BYTEBEAM_LOGGING_LEVEL_IS_DEBUG
             default 5 if BYTEBEAM_LOGGING_LEVEL_IS_VERBOSE
     endmenu
+    
+    config NUM_MESSAGES_IN_MQTT_BATCH
+        int "MQTT batch element numbers"
+        default 125
+        help
+            Provide the number of elements in mqtt batch
+    
+    config MQTT_BATCH_ELEMENT_SIZE
+        int "MQTT batch element size (In Bytes)"
+        default 250
+        help
+            Provide the length of element in mqtt batch 
+
 endmenu

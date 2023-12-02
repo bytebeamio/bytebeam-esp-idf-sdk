@@ -3,6 +3,13 @@
 #include "bytebeam_action.h"
 #include "bytebeam_stream.h"
 
+static char json_paylaod[CONFIG_MQTT_BATCH_ELEMENT_SIZE] = "";
+static char batch_json_data[CONFIG_NUM_MESSAGES_IN_MQTT_BATCH * CONFIG_MQTT_BATCH_ELEMENT_SIZE] = "";
+
+static char batch_mqtt_stream[100] = "";
+static bytebeam_client_t *bytebeam_batch_mqtt_client = NULL;
+SemaphoreHandle_t batch_mqtt_semaphore = NULL;
+
 static const char *TAG = "BYTEBEAM_STREAM";
 
 bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, char *stream_name, char *payload)
@@ -33,7 +40,7 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
     msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, payload, strlen(payload), qos);
     
     if (msg_id != -1) {
-        BB_HAL_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, payload);
+        BB_HAL_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         return BB_SUCCESS;
     } else {
         BB_HAL_LOGE(TAG, "Publish to %s stream Failed", stream_name);
@@ -237,9 +244,9 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     {
         strcat(device_shadow_json_str, ",");
         strcat(device_shadow_json_str, bytebeam_client->device_shadow.custom_json_str);
-        strcat(device_shadow_json_str, "]");
     }
 
+    strcat(device_shadow_json_str, "]");
     BB_HAL_LOGI(TAG, "\nStatus to send:\n%s\n", device_shadow_json_str);
 
     // publish the json to device shadow stream
@@ -282,6 +289,41 @@ bytebeam_err_t bytebeam_register_device_shadow_updater(bytebeam_client_t *bytebe
     return BB_SUCCESS;
 }
 
+bytebeam_err_t bytebeam_batch_init(bytebeam_client_t *bytebeam_client, char* stream_name)
+{
+    if(bytebeam_client == NULL || stream_name == NULL)
+    {
+        return BB_NULL_CHECK_FAILURE;
+    }
+
+    batch_mqtt_semaphore = xSemaphoreCreateBinary();
+
+    if(batch_mqtt_semaphore == NULL)
+    {
+        ESP_LOGE(TAG, "Batch MQTT Semaphore Creation Failed.\n");
+        return BB_FAILURE;
+    }
+
+    bytebeam_batch_mqtt_client = bytebeam_client;
+    strcpy(batch_mqtt_stream, stream_name);
+
+    return BB_SUCCESS;
+}
+
+bytebeam_err_t bytebeam_batch_publish_to_stream(char* payload)
+{
+    if(bytebeam_batch_mqtt_client == NULL)
+    {
+        ESP_LOGE(TAG, "No Bytebeam Batch MQTT Handle.\n");
+        return BB_FAILURE;
+    }
+
+    strcpy(json_paylaod, payload);
+    xSemaphoreGive(batch_mqtt_semaphore);
+
+    return BB_SUCCESS;
+}
+
 void bytebeam_user_thread_entry(void *pv)
 {
     bytebeam_err_t err_code;
@@ -305,11 +347,46 @@ void bytebeam_user_thread_entry(void *pv)
 void bytebeam_mqtt_thread_entry(void *pv)
 {
     bytebeam_err_t err_code;
-    bytebeam_client_t *bytebeam_client = (bytebeam_client_t*) pv;
-
+    static int batch_size = 0;
+    
     while(1)
     {
-        // BB_HAL_LOGI(TAG, "Bytebeam MQTT Thread\n");
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        if(xSemaphoreTake(batch_mqtt_semaphore, portMAX_DELAY) == pdTRUE)
+        {
+            if(batch_size == 0)
+            {
+                memset(batch_json_data, 0, sizeof(batch_json_data));
+                strcpy(batch_json_data, "[");
+            }
+            
+            batch_size++;
+            ESP_LOGI(TAG, "Mqtt Batch Size Now : %d\n", batch_size);
+
+            if(batch_size == CONFIG_NUM_MESSAGES_IN_MQTT_BATCH)
+            {
+                strcat(batch_json_data, json_paylaod);
+                strcat(batch_json_data, "]");
+                batch_size = 0;
+
+                // publish the json to device shadow stream
+                bytebeam_err_t err_code;
+                do
+                {   
+                    ESP_LOGI(TAG, "Trying to publish MQTT Batch");
+                    err_code = bytebeam_publish_to_stream(bytebeam_batch_mqtt_client, batch_mqtt_stream, batch_json_data);
+
+                    if(err_code != BB_SUCCESS)
+                    {
+                        vTaskDelay(10 / portTICK_PERIOD_MS);
+                    }
+
+                } while(err_code != BB_SUCCESS);
+            }
+            else
+            {
+                strcat(batch_json_data, json_paylaod);
+                strcat(batch_json_data, ",");   
+            }
+        }
     }
 }

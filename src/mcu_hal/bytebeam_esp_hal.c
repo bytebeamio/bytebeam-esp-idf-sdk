@@ -422,8 +422,8 @@ int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client)
         }
     }
 
-    xTaskCreate(bytebeam_user_thread_entry, "Bytebeam User Thread", 4096, bytebeam_client, 2, NULL);
-    xTaskCreate(bytebeam_mqtt_thread_entry, "Bytebeam MQTT Thread", 8192, bytebeam_client, 2, NULL);
+    xTaskCreate(bytebeam_user_thread_entry, "Bytebeam User Thread", 4*1024, bytebeam_client, 2, NULL);
+    xTaskCreate(bytebeam_mqtt_thread_entry, "Bytebeam MQTT Thread", 8*1024, NULL, 2, NULL);
 
     return 0;
 }
