@@ -14,6 +14,7 @@ This section includes the example apps to easily get you started with **bytebeam
     - esp_touch
     - sht31_data_logger
     - custom_device_shaodw
+    - batch_mqtt_data
 - cloud_logging
 - basic_ota
 - basic_ota_rollback
