@@ -15,7 +15,7 @@ if("${TARGET}" IN_LIST targets)
     idf_build_component(components/led_strip)
 
     # Create bytebeam esp idf sdk component static library
-    idf_build_component(../../../)
+    idf_build_component(../../)
 
     # Create idf::{target} and idf::freertos static libraries
     idf_build_process("${TARGET}"

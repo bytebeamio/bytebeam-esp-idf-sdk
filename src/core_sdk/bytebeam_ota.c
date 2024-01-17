@@ -19,7 +19,7 @@ static int parse_ota_json(char *payload_string, char *url_string_return)
     pl_json = cJSON_Parse(payload_string);
 
     if (pl_json == NULL) {
-        BB_HAL_LOGE(TAG, "ERROR in parsing the OTA JSON\n");
+        BB_LOGE(TAG, "ERROR in parsing the OTA JSON\n");
 
         return -1;
     }
@@ -27,9 +27,9 @@ static int parse_ota_json(char *payload_string, char *url_string_return)
     url = cJSON_GetObjectItem(pl_json, "url");
 
     if (cJSON_IsString(url) && (url->valuestring != NULL)) {
-        BB_HAL_LOGI(TAG, "Checking url \"%s\"\n", url->valuestring);
+        BB_LOGI(TAG, "Checking url \"%s\"\n", url->valuestring);
     } else {
-        BB_HAL_LOGE(TAG, "URL parsing failed");
+        BB_LOGE(TAG, "URL parsing failed");
 
         cJSON_Delete(pl_json);
         return -1;
@@ -38,9 +38,9 @@ static int parse_ota_json(char *payload_string, char *url_string_return)
     version = cJSON_GetObjectItem(pl_json, "version");
 
     if (cJSON_IsString(version) && (version->valuestring != NULL)) {
-        BB_HAL_LOGI(TAG, "Checking version \"%s\"\n", version->valuestring);
+        BB_LOGI(TAG, "Checking version \"%s\"\n", version->valuestring);
     } else {
-        BB_HAL_LOGE(TAG, "FW version parsing failed");
+        BB_LOGE(TAG, "FW version parsing failed");
 
         cJSON_Delete(pl_json);
         return -1;
@@ -51,13 +51,13 @@ static int parse_ota_json(char *payload_string, char *url_string_return)
 
     if(temp_var >= max_len)
     {
-        BB_HAL_LOGE(TAG, "FW update URL exceeded buffer size");
+        BB_LOGE(TAG, "FW update URL exceeded buffer size");
 
         cJSON_Delete(pl_json);
         return -1;
     }
 
-    BB_HAL_LOGI(TAG, "The constructed URL is: %s", url_string_return);
+    BB_LOGI(TAG, "The constructed URL is: %s", url_string_return);
 
     cJSON_Delete(pl_json);
     
@@ -67,7 +67,7 @@ static int parse_ota_json(char *payload_string, char *url_string_return)
 static int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char *ota_url)
 {
     // test_device_config = bytebeam_client->device_cfg;
-    BB_HAL_LOGI(TAG, "Starting OTA.....");
+    BB_LOGI(TAG, "Starting OTA.....");
 
     if ((bytebeam_hal_ota(bytebeam_client, ota_url)) != -1) {
         esp_err_t err;
@@ -79,7 +79,7 @@ static int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char
 
         if(err != ESP_OK)
         {
-            BB_HAL_LOGE(TAG, "NVS flash init failed.");
+            BB_LOGE(TAG, "NVS flash init failed.");
             return -1;
         }
 
@@ -87,7 +87,7 @@ static int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char
 
         if (err != ESP_OK) 
         {
-            BB_HAL_LOGE(TAG, "Failed to open NVS Storage");
+            BB_LOGE(TAG, "Failed to open NVS Storage");
             return -1;
         }
 
@@ -95,7 +95,7 @@ static int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char
 
         if (err != ESP_OK) 
         {
-            BB_HAL_LOGE(TAG, "Failed to set the OTA update flag in NVS");
+            BB_LOGE(TAG, "Failed to set the OTA update flag in NVS");
             return -1;
         }
 
@@ -103,7 +103,7 @@ static int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char
 
         if (err != ESP_OK) 
         {
-            BB_HAL_LOGE(TAG, "Failed to commit the OTA update flag in NVS");
+            BB_LOGE(TAG, "Failed to commit the OTA update flag in NVS");
             return -1;
         }
 
@@ -111,7 +111,7 @@ static int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char
 
         if (err != ESP_OK) 
         {
-            BB_HAL_LOGE(TAG, "Failed to set the OTA action id in NVS");
+            BB_LOGE(TAG, "Failed to set the OTA action id in NVS");
             return -1;
         }
 
@@ -119,17 +119,17 @@ static int perform_ota(bytebeam_client_t *bytebeam_client, char *action_id, char
 
         if (err != ESP_OK) 
         {
-            BB_HAL_LOGE(TAG, "Failed to commit the OTA action id in NVS");
+            BB_LOGE(TAG, "Failed to commit the OTA action id in NVS");
             return -1;
         }
 
         nvs_close(nvs_handle);
         bytebeam_hal_restart();
     } else {
-        BB_HAL_LOGE(TAG, "Firmware Upgrade Failed");
+        BB_LOGE(TAG, "Firmware Upgrade Failed");
 
         if ((bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", ota_error_str)) != 0) {
-            BB_HAL_LOGE(TAG, "Failed to publish negative response for Firmware upgrade failure");
+            BB_LOGE(TAG, "Failed to publish negative response for Firmware upgrade failure");
         }
 
         // clear the OTA error
@@ -151,7 +151,7 @@ bytebeam_err_t handle_ota(bytebeam_client_t *bytebeam_client, char *payload_stri
     char constructed_url[BYTEBAM_OTA_URL_STR_LEN] = { 0 };
 
     if ((parse_ota_json(payload_string, constructed_url)) == -1) {
-        BB_HAL_LOGE(TAG, "Firmware upgrade failed due to error in parsing OTA JSON");
+        BB_LOGE(TAG, "Firmware upgrade failed due to error in parsing OTA JSON");
         return BB_FAILURE;
     }
 

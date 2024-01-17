@@ -18,11 +18,11 @@ typedef enum bytebeam_reset_reason {
     BB_RST_SDIO,       //!< Reset over SDIO
 } bytebeam_reset_reason_t;
 
-#define BB_HAL_LOGE(tag, fmt, ...)  ESP_LOGE(tag, fmt, ##__VA_ARGS__)
-#define BB_HAL_LOGW(tag, fmt, ...)  ESP_LOGW(tag, fmt, ##__VA_ARGS__)
-#define BB_HAL_LOGI(tag, fmt, ...)  ESP_LOGI(tag, fmt, ##__VA_ARGS__)
-#define BB_HAL_LOGD(tag, fmt, ...)  ESP_LOGD(tag, fmt, ##__VA_ARGS__)
-#define BB_HAL_LOGV(tag, fmt, ...)  ESP_LOGV(tag, fmt, ##__VA_ARGS__)
+#define BB_LOGE(tag, fmt, ...)  ESP_LOGE(tag, fmt, ##__VA_ARGS__)
+#define BB_LOGW(tag, fmt, ...)  ESP_LOGW(tag, fmt, ##__VA_ARGS__)
+#define BB_LOGI(tag, fmt, ...)  ESP_LOGI(tag, fmt, ##__VA_ARGS__)
+#define BB_LOGD(tag, fmt, ...)  ESP_LOGD(tag, fmt, ##__VA_ARGS__)
+#define BB_LOGV(tag, fmt, ...)  ESP_LOGV(tag, fmt, ##__VA_ARGS__)
 
 int bytebeam_hal_mqtt_subscribe(bytebeam_client_handle_t client, char *topic, int qos);
 int bytebeam_hal_mqtt_unsubscribe(bytebeam_client_handle_t client, char *topic);

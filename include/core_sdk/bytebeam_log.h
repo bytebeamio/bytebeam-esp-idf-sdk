@@ -7,40 +7,38 @@
 /*This macro is used to specify the maximum length of bytebeam log stream string*/
 #define BYTEBEAM_LOG_STREAM_STR_LEN 20
 
-#define BB_LOGX(BB_HAL_LOGX, level, tag, fmt, ...)                                            \
+#define BYTEBEAM_LOGX(BB_LOGX, level, tag, fmt, ...)                                            \
     do {                                                                                      \
         const char* levelStr = bytebeam_log_level_str[level];                                 \
         if(level <= bytebeam_log_level_get()) {                                               \
-            BB_HAL_LOGX(tag, fmt, ##__VA_ARGS__);                                             \
+            BB_LOGX(tag, fmt, ##__VA_ARGS__);                                             \
             if (bytebeam_log_publish(levelStr, tag, fmt, ##__VA_ARGS__) == BB_FAILURE) {      \
-                BB_HAL_LOGE(tag, "Failed To publish log to bytebeam.");                       \
+                BB_LOGE(tag, "Failed To publish log to bytebeam.");                       \
             }                                                                                 \
         }                                                                                     \
     } while (0)
 
-#define BB_LOGE(tag, fmt, ...)  BB_LOGX(BB_HAL_LOGE, BB_LOG_LEVEL_ERROR, tag, fmt, ##__VA_ARGS__)
-#define BB_LOGW(tag, fmt, ...)  BB_LOGX(BB_HAL_LOGW, BB_LOG_LEVEL_WARN, tag, fmt, ##__VA_ARGS__)
-#define BB_LOGI(tag, fmt, ...)  BB_LOGX(BB_HAL_LOGI, BB_LOG_LEVEL_INFO, tag, fmt, ##__VA_ARGS__)
-#define BB_LOGD(tag, fmt, ...)  BB_LOGX(BB_HAL_LOGD, BB_LOG_LEVEL_DEBUG, tag, fmt, ##__VA_ARGS__)
-#define BB_LOGV(tag, fmt, ...)  BB_LOGX(BB_HAL_LOGV, BB_LOG_LEVEL_VERBOSE, tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGE(tag, fmt, ...)  BYTEBEAM_LOGX(BB_LOGE, BYTEBEAM_LOG_LEVEL_ERROR, tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGW(tag, fmt, ...)  BYTEBEAM_LOGX(BB_LOGW, BYTEBEAM_LOG_LEVEL_WARN, tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGI(tag, fmt, ...)  BYTEBEAM_LOGX(BB_LOGI, BYTEBEAM_LOG_LEVEL_INFO, tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGD(tag, fmt, ...)  BYTEBEAM_LOGX(BB_LOGD, BYTEBEAM_LOG_LEVEL_DEBUG, tag, fmt, ##__VA_ARGS__)
+#define BYTEBEAM_LOGV(tag, fmt, ...)  BYTEBEAM_LOGX(BB_LOGV, BYTEBEAM_LOG_LEVEL_VERBOSE, tag, fmt, ##__VA_ARGS__)
 
 /* This enum represents Bytebeam Log Levels */
 typedef enum {
-    BB_LOG_LEVEL_NONE,
-    BB_LOG_LEVEL_ERROR,
-    BB_LOG_LEVEL_WARN,
-    BB_LOG_LEVEL_INFO,
-    BB_LOG_LEVEL_DEBUG,
-    BB_LOG_LEVEL_VERBOSE,
+    BYTEBEAM_LOG_LEVEL_ERROR,
+    BYTEBEAM_LOG_LEVEL_WARN,
+    BYTEBEAM_LOG_LEVEL_INFO,
+    BYTEBEAM_LOG_LEVEL_DEBUG,
+    BYTEBEAM_LOG_LEVEL_VERBOSE,
 } bytebeam_log_level_t;
 
-static const char* bytebeam_log_level_str[6] = {
-    [BB_LOG_LEVEL_NONE]    = "None",
-    [BB_LOG_LEVEL_ERROR]   = "Error",
-    [BB_LOG_LEVEL_WARN]    = "Warn",
-    [BB_LOG_LEVEL_INFO]    = "Info",
-    [BB_LOG_LEVEL_DEBUG]   = "Debug",
-    [BB_LOG_LEVEL_VERBOSE] = "Verbose"
+static const char* bytebeam_log_level_str[5] = {
+    [BYTEBEAM_LOG_LEVEL_ERROR]   = "Error",
+    [BYTEBEAM_LOG_LEVEL_WARN]    = "Warn",
+    [BYTEBEAM_LOG_LEVEL_INFO]    = "Info",
+    [BYTEBEAM_LOG_LEVEL_DEBUG]   = "Debug",
+    [BYTEBEAM_LOG_LEVEL_VERBOSE] = "Verbose"
 };
 
 /**

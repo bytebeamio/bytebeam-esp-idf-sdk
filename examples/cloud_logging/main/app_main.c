@@ -38,31 +38,31 @@ static const char *TAG = "BYTEBEAM_CLOUD_LOGGING_EXAMPLE";
 
 static void bytebeam_cloud_logging_test(void) 
 {
-    /* default bytebeam log level is BB_LOG_LEVEL_INFO, so logs beyond info level will not work :) 
+    /* default bytebeam log level is BYTEBEAM_LOG_LEVEL_INFO, so logs beyond info level will not work :) 
      * You can always change the log setting at the compile time or run time
      */
-    BB_LOGE(TAG, "I am %s Log", "Error");
-    BB_LOGW(TAG, "I am %s Log", "Warn");
-    BB_LOGI(TAG, "I am %s Log", "Info");
-    BB_LOGD(TAG, "I am %s Log", "Debug");                   // debug Log will not appear to cloud
-    BB_LOGV(TAG, "I am %s Log", "Verbose");                 // verbose Log will not appear to cloud
+    BYTEBEAM_LOGE(TAG, "I am %s Log", "Error");
+    BYTEBEAM_LOGW(TAG, "I am %s Log", "Warn");
+    BYTEBEAM_LOGI(TAG, "I am %s Log", "Info");
+    BYTEBEAM_LOGD(TAG, "I am %s Log", "Debug");                   // debug Log will not appear to cloud
+    BYTEBEAM_LOGV(TAG, "I am %s Log", "Verbose");                 // verbose Log will not appear to cloud
 
     // changing log level to Verbose for showing use case   
     esp_log_level_set(TAG, ESP_LOG_VERBOSE);
-    bytebeam_log_level_set(BB_LOG_LEVEL_VERBOSE); 
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_VERBOSE); 
 
-    /* now bytebeam log level is BB_LOG_LEVEL_VERBOSE, so every logs should work now :)
+    /* now bytebeam log level is BYTEBEAM_LOG_LEVEL_VERBOSE, so every logs should work now :)
      * make sure your esp log level supports Verbose to see the log in the terminal
      */
-    BB_LOGE(TAG, "This is %s Log", "Error");
-    BB_LOGW(TAG, "This is %s Log", "Warn");
-    BB_LOGI(TAG, "This is %s Log", "Info");
-    BB_LOGD(TAG, "This is %s Log", "Debug");                // debug Log should appear to cloud
-    BB_LOGV(TAG, "This is %s Log", "Verbose");              // verbose Log should appear to cloud
+    BYTEBEAM_LOGE(TAG, "This is %s Log", "Error");
+    BYTEBEAM_LOGW(TAG, "This is %s Log", "Warn");
+    BYTEBEAM_LOGI(TAG, "This is %s Log", "Info");
+    BYTEBEAM_LOGD(TAG, "This is %s Log", "Debug");                // debug Log should appear to cloud
+    BYTEBEAM_LOGV(TAG, "This is %s Log", "Verbose");              // verbose Log should appear to cloud
 
     // changing log level back to Info for meeting initial conditions
     esp_log_level_set(TAG, ESP_LOG_INFO);
-    bytebeam_log_level_set(BB_LOG_LEVEL_INFO);
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_INFO);
 
     ESP_LOGI(TAG, "Bytebeam Log Test Executed Successfully !\n");
 }
@@ -78,8 +78,8 @@ static void app_start(bytebeam_client_t *bytebeam_client)
         if(bytebeam_client->connection_status == 1)
         {
             // this is how you can do cloud logging, try other log levels for better understanding
-            BB_LOGI(TAG, "Status : Connected");
-            BB_LOGI(TAG, "Project Id : %s, Device Id : %s", bytebeam_client->device_cfg.project_id, bytebeam_client->device_cfg.device_id);
+            BYTEBEAM_LOGI(TAG, "Status : Connected");
+            BYTEBEAM_LOGI(TAG, "Project Id : %s, Device Id : %s", bytebeam_client->device_cfg.project_id, bytebeam_client->device_cfg.device_id);
         }
 
         vTaskDelay(config_delay_period / portTICK_PERIOD_MS);

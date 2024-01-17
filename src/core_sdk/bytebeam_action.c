@@ -19,11 +19,11 @@ int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_
 
     if(temp_var >= max_len)
     {
-        BB_HAL_LOGE(TAG, "subscribe topic size exceeded buffer size");
+        BB_LOGE(TAG, "subscribe topic size exceeded buffer size");
         return -1;
     }
 
-    BB_HAL_LOGD(TAG, "Subscribe Topic is %s", topic);
+    BB_LOGD(TAG, "Subscribe Topic is %s", topic);
 
     msg_id = bytebeam_hal_mqtt_subscribe(client, topic, qos);
 
@@ -40,11 +40,11 @@ int bytebeam_unsubscribe_to_actions(bytebeam_device_config_t device_cfg, bytebea
 
     if(temp_var >= max_len)
     {
-        BB_HAL_LOGE(TAG, "unsubscribe topic size exceeded buffer size");
+        BB_LOGE(TAG, "unsubscribe topic size exceeded buffer size");
         return -1;
     }
 
-    BB_HAL_LOGD(TAG, "Unsubscribe Topic is %s", topic);
+    BB_LOGD(TAG, "Unsubscribe Topic is %s", topic);
 
     /* Commenting call to hal unsubscribe api as cloud seems to be not supporting unsubscribe feature, will test it
      * once cloud supports unsubscribe feature, most probably it will work.
@@ -52,7 +52,7 @@ int bytebeam_unsubscribe_to_actions(bytebeam_device_config_t device_cfg, bytebea
 
     // msg_id = bytebeam_hal_mqtt_unsubscribe(client, topic);
     msg_id = 1234;
-    BB_HAL_LOGI(TAG, "We will add the unsubscribe to actions feature soon");
+    BB_LOGI(TAG, "We will add the unsubscribe to actions feature soon");
 
     return msg_id;
 }
@@ -70,7 +70,7 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
     root = cJSON_Parse(action_received);
 
     if (root == NULL) {
-        BB_HAL_LOGE(TAG, "ERROR in parsing the JSON\n");
+        BB_LOGE(TAG, "ERROR in parsing the JSON\n");
 
         return -1;
     }
@@ -78,20 +78,20 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
     name = cJSON_GetObjectItem(root, "name");
 
     if (!(cJSON_IsString(name) && (name->valuestring != NULL))) {
-        BB_HAL_LOGE(TAG, "Error parsing action name\n");
+        BB_LOGE(TAG, "Error parsing action name\n");
 
         cJSON_Delete(root);
         return -1;
     }
 
-    BB_HAL_LOGI(TAG, "Checking name \"%s\"\n", name->valuestring);
+    BB_LOGI(TAG, "Checking name \"%s\"\n", name->valuestring);
 
     action_id_obj = cJSON_GetObjectItem(root, "id");
 
     if (cJSON_IsString(action_id_obj) && (action_id_obj->valuestring != NULL)) {
-        BB_HAL_LOGI(TAG, "Checking version \"%s\"\n", action_id_obj->valuestring);
+        BB_LOGI(TAG, "Checking version \"%s\"\n", action_id_obj->valuestring);
     } else {
-        BB_HAL_LOGE(TAG, "Error parsing action id");
+        BB_LOGE(TAG, "Error parsing action id");
 
         cJSON_Delete(root);
         return -1;
@@ -102,7 +102,7 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
 
     if(temp_var >= max_len)
     {
-        BB_HAL_LOGE(TAG, "Action Id length exceeded buffer size");
+        BB_LOGE(TAG, "Action Id length exceeded buffer size");
 
         cJSON_Delete(root);
         return -1;
@@ -111,18 +111,18 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
     int action_id_val = atoi(action_id);
     int last_known_action_id_val = atoi(bytebeam_last_known_action_id);
 
-    BB_HAL_LOGD(TAG, "action_id_val : %d, last_known_action_id_val : %d\n",action_id_val, last_known_action_id_val);
+    BB_LOGD(TAG, "action_id_val : %d, last_known_action_id_val : %d\n",action_id_val, last_known_action_id_val);
 
     // just ignore the previous actions if triggered again
     if (action_id_val <= last_known_action_id_val) {
-        BB_HAL_LOGE(TAG, "Ignoring %s Action\n", name->valuestring);
+        BB_LOGE(TAG, "Ignoring %s Action\n", name->valuestring);
         return 0;
     }
 
     payload = cJSON_GetObjectItem(root, "payload");
 
     if (cJSON_IsString(payload) && (payload->valuestring != NULL)) {
-        BB_HAL_LOGI(TAG, "Checking payload \"%s\"\n", payload->valuestring);
+        BB_LOGI(TAG, "Checking payload \"%s\"\n", payload->valuestring);
 
         while (bytebeam_client->action_funcs[action_iterator].name) {
             if (!strcmp(bytebeam_client->action_funcs[action_iterator].name, name->valuestring)) {
@@ -134,7 +134,7 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
         }
 
         if (bytebeam_client->action_funcs[action_iterator].name == NULL) {
-            BB_HAL_LOGI(TAG, "Invalid action:%s\n", name->valuestring);
+            BB_LOGI(TAG, "Invalid action:%s\n", name->valuestring);
 
             // publish action failed response indicating unregistered action
             bytebeam_publish_action_status(bytebeam_client, action_id, 0, "Failed", "Unregistered Action");
@@ -143,7 +143,7 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
         // update the last known action id
         strcpy(bytebeam_last_known_action_id, action_id);
     } else {
-        BB_HAL_LOGE(TAG, "Error fetching payload");
+        BB_LOGE(TAG, "Error fetching payload");
 
         cJSON_Delete(root);
         return -1;
@@ -165,7 +165,7 @@ bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, i
     }
 
     if (function_handler_index >= BYTEBEAM_NUMBER_OF_ACTIONS) {
-        BB_HAL_LOGE(TAG, "Creation of new action handler failed");
+        BB_LOGE(TAG, "Creation of new action handler failed");
         return BB_FAILURE;
     }
 
@@ -174,7 +174,7 @@ bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, i
     // checking for duplicates in the array, if there log the info about it and return 
     for (action_iterator = 0; action_iterator < function_handler_index; action_iterator++) {
         if (!strcmp(bytebeam_client->action_funcs[action_iterator].name, func_name)) {
-            BB_HAL_LOGE(TAG, "action : %s is already there, update the action instead\n", func_name);
+            BB_LOGE(TAG, "action : %s is already there, update the action instead\n", func_name);
             return BB_FAILURE;
         }
     }
@@ -204,7 +204,7 @@ bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client
     }
 
     if (target_action_index == -1) {
-        BB_HAL_LOGE(TAG, "action : %s not found \n", func_name);
+        BB_LOGE(TAG, "action : %s not found \n", func_name);
         return BB_FAILURE;
     } else {
         for(action_iterator = target_action_index; action_iterator < function_handler_index - 1; action_iterator++) {
@@ -237,7 +237,7 @@ bytebeam_err_t bytebeam_update_action_handler(bytebeam_client_t *bytebeam_client
     }
 
     if (target_action_index == -1) {
-        BB_HAL_LOGE(TAG, "action : %s not found \n", func_name);
+        BB_LOGE(TAG, "action : %s not found \n", func_name);
         return BB_FAILURE;
     } else {
         bytebeam_client->action_funcs[target_action_index].func = new_func_ptr;
@@ -263,10 +263,10 @@ bytebeam_err_t bytebeam_is_action_handler_there(bytebeam_client_t *bytebeam_clie
     }
 
     if (target_action_index == -1) {
-        BB_HAL_LOGE(TAG, "action : %s not found \n", func_name);
+        BB_LOGE(TAG, "action : %s not found \n", func_name);
         return BB_FAILURE;
     } else {
-        BB_HAL_LOGI(TAG, "action : %s found at index %d\n", func_name, target_action_index);
+        BB_LOGI(TAG, "action : %s found at index %d\n", func_name, target_action_index);
         return BB_SUCCESS;
     }
 }
@@ -281,15 +281,15 @@ bytebeam_err_t bytebeam_print_action_handler_array(bytebeam_client_t *bytebeam_c
 
     int action_iterator = 0;
 
-    BB_HAL_LOGI(TAG, "[");
+    BB_LOGI(TAG, "[");
     for (action_iterator = 0; action_iterator < BYTEBEAM_NUMBER_OF_ACTIONS; action_iterator++) {
         if (bytebeam_client->action_funcs[action_iterator].name != NULL) {
-            BB_HAL_LOGI(TAG, "       {%s : %s}       \n", bytebeam_client->action_funcs[action_iterator].name, "*******");
+            BB_LOGI(TAG, "       {%s : %s}       \n", bytebeam_client->action_funcs[action_iterator].name, "*******");
         } else {
-            BB_HAL_LOGI(TAG, "       {%s : %s}       \n", "NULL", "NULL");
+            BB_LOGI(TAG, "       {%s : %s}       \n", "NULL", "NULL");
         }
     }
-    BB_HAL_LOGI(TAG, "]");
+    BB_LOGI(TAG, "]");
 
     return BB_SUCCESS;
 }
@@ -397,7 +397,7 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
     action_status_json_list = cJSON_CreateArray();
 
     if (action_status_json_list == NULL) {
-        BB_HAL_LOGE(TAG, "Json Init failed.");
+        BB_LOGE(TAG, "Json Init failed.");
 
         return BB_FAILURE;
     }
@@ -405,7 +405,7 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
     action_status_json = cJSON_CreateObject();
 
     if (action_status_json == NULL) {
-        BB_HAL_LOGE(TAG, "Json add failed.");
+        BB_LOGE(TAG, "Json add failed.");
 
         cJSON_Delete(action_status_json_list);
         return BB_FAILURE;
@@ -415,7 +415,7 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
 
     if(milliseconds == 0)
     {
-        BB_HAL_LOGE(TAG, "failed to get epoch millis.");
+        BB_LOGE(TAG, "failed to get epoch millis.");
 
         cJSON_Delete(action_status_json_list);
         return BB_FAILURE;
@@ -424,7 +424,7 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
     timestamp_json = cJSON_CreateNumber(milliseconds);
 
     if (timestamp_json == NULL) {
-        BB_HAL_LOGE(TAG, "Json add time stamp failed.");
+        BB_LOGE(TAG, "Json add time stamp failed.");
 
         cJSON_Delete(action_status_json_list);
         return BB_FAILURE;
@@ -436,7 +436,7 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
     seq_json = cJSON_CreateNumber(sequence);
 
     if (seq_json == NULL) {
-        BB_HAL_LOGE(TAG, "Json add seq id failed.");
+        BB_LOGE(TAG, "Json add seq id failed.");
      
         cJSON_Delete(action_status_json_list);
         return BB_FAILURE;
@@ -447,7 +447,7 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
     device_status_json = cJSON_CreateString(status);
 
     if (device_status_json == NULL) {
-        BB_HAL_LOGE(TAG, "Json add device status failed.");
+        BB_LOGE(TAG, "Json add device status failed.");
 
         cJSON_Delete(action_status_json_list);
         return BB_FAILURE;
@@ -459,7 +459,7 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
     action_errors_json = cJSON_CreateStringArray(ota_states, 1);
 
     if (action_errors_json == NULL) {
-        BB_HAL_LOGE(TAG, "Json add action errors failed.");
+        BB_LOGE(TAG, "Json add action errors failed.");
 
         cJSON_Delete(action_status_json_list);
         return BB_FAILURE;
@@ -470,7 +470,7 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
     action_id_json = cJSON_CreateString(action_id);
 
     if (action_id_json == NULL) {
-        BB_HAL_LOGE(TAG, "Json add action_id failed.");
+        BB_LOGE(TAG, "Json add action_id failed.");
 
         cJSON_Delete(action_status_json_list);
         return BB_FAILURE;
@@ -481,7 +481,7 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
     percentage_json = cJSON_CreateNumber(percentage);
 
     if (percentage_json == NULL) {
-        BB_HAL_LOGE(TAG, "Json add progress percentage failed.");
+        BB_LOGE(TAG, "Json add progress percentage failed.");
 
         cJSON_Delete(action_status_json_list);
         return BB_FAILURE;
@@ -495,34 +495,34 @@ bytebeam_err_t bytebeam_publish_action_status(bytebeam_client_t *bytebeam_client
 
     if(string_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json string print failed.");
+        BB_LOGE(TAG, "Json string print failed.");
 
         cJSON_Delete(action_status_json_list);
         return BB_FAILURE;
     } 
 
-    BB_HAL_LOGD(TAG, "\nTrying to print:\n%s\n", string_json);
+    BB_LOGD(TAG, "\nTrying to print:\n%s\n", string_json);
 
     int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
     int temp_var = snprintf(topic, max_len, "/tenants/%s/devices/%s/action/status", bytebeam_client->device_cfg.project_id, bytebeam_client->device_cfg.device_id);
 
     if(temp_var >= max_len)
     {
-        BB_HAL_LOGE(TAG, "action status topic size exceeded topic buffer size");
+        BB_LOGE(TAG, "action status topic size exceeded topic buffer size");
 
         cJSON_Delete(action_status_json_list);
         cJSON_free(string_json);
         return BB_FAILURE;
     }
 
-    BB_HAL_LOGI(TAG, "\nTopic is %s\n", topic);
+    BB_LOGI(TAG, "\nTopic is %s\n", topic);
 
     msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, string_json, strlen(string_json), qos);
 
     if (msg_id != -1) {
-        BB_HAL_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, string_json);
+        BB_LOGI(TAG, "sent publish successful, msg_id=%d, message:%s", msg_id, string_json);
     } else {
-        BB_HAL_LOGE(TAG, "Publish Failed.");
+        BB_LOGE(TAG, "Publish Failed.");
 
         cJSON_Delete(action_status_json_list);
         cJSON_free(string_json);

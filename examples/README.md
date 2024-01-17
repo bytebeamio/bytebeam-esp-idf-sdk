@@ -12,7 +12,7 @@ This section includes the example apps to easily get you started with **bytebeam
     - update_config
 - push_data
     - esp_touch
-    - sht31_data_logger
+    - temp_humid
     - custom_device_shaodw
     - batch_mqtt_data
 - cloud_logging

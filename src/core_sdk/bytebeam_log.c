@@ -6,7 +6,7 @@
 // bytebeam log module variables
 static bool is_cloud_logging_enable = false;
 static char bytebeam_log_stream[BYTEBEAM_LOG_STREAM_STR_LEN] = "";
-static bytebeam_log_level_t bytebeam_log_level = BB_LOG_LEVEL_NONE;
+static bytebeam_log_level_t bytebeam_log_level = BYTEBEAM_LOG_LEVEL_INFO;
 static bytebeam_client_t *bytebeam_log_client = NULL;
 
 static const char *TAG = "BYTEBEAM_LOG";
@@ -18,7 +18,7 @@ void bytebeam_log_client_set(bytebeam_client_t *bytebeam_client)
 
 void bytebeam_enable_cloud_logging()
 {
-    BB_HAL_LOGI(TAG, "Cloud Logging Enabled.");
+    BB_LOGI(TAG, "Cloud Logging Enabled.");
     is_cloud_logging_enable = true;
 }
 
@@ -29,13 +29,13 @@ bool bytebeam_is_cloud_logging_enabled()
 
 void bytebeam_disable_cloud_logging()
 {
-    BB_HAL_LOGI(TAG, "Cloud Logging Disabled.");
+    BB_LOGI(TAG, "Cloud Logging Disabled.");
     is_cloud_logging_enable = false;
 }
 
 void bytebeam_log_level_set(bytebeam_log_level_t level)
 {
-    BB_HAL_LOGI(TAG, "Setting Bytebeam Log Level : %d", level);
+    BB_LOGI(TAG, "Setting Bytebeam Log Level : %d", level);
     bytebeam_log_level = level;
 }
 
@@ -56,11 +56,11 @@ bytebeam_err_t bytebeam_log_stream_set(char* stream_name)
 
     if (temp_var >= max_len)
     {
-        BB_HAL_LOGE(TAG, "log stream size exceeded buffer size");
+        BB_LOGE(TAG, "log stream size exceeded buffer size");
         return BB_FAILURE;
     }
 
-    BB_HAL_LOGI(TAG, "Setting Bytebeam Cloud Logging Stream : %s", stream_name);
+    BB_LOGI(TAG, "Setting Bytebeam Cloud Logging Stream : %s", stream_name);
 
     return BB_SUCCESS;
 }
@@ -87,14 +87,14 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     if(bytebeam_log_client == NULL)
     {
-        BB_HAL_LOGE(TAG, "Bytebeam log client handle is not set");
+        BB_LOGE(TAG, "Bytebeam log client handle is not set");
         return BB_FAILURE;
     }
 
     // if cloud logging is disabled, we don't need to push just return :)
     if(!is_cloud_logging_enable) 
     {
-        BB_HAL_LOGE(TAG, "Bytebeam cloud logging is not enabled");
+        BB_LOGE(TAG, "Bytebeam cloud logging is not enabled");
         return BB_FAILURE;
     }
 
@@ -108,7 +108,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     // Check the buffer size
     if(buffer_size <= 0) 
     {
-        BB_HAL_LOGE(TAG, "Failed to Get the buffer size for Bytebeam Log.");
+        BB_LOGE(TAG, "Failed to Get the buffer size for Bytebeam Log.");
         return BB_FAILURE;
     }
 
@@ -116,7 +116,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     char *message_buffer = (char*) malloc(buffer_size);
     if (message_buffer == NULL) 
     {
-        BB_HAL_LOGE(TAG, "Failed to ALlocate the memory for Bytebeam Log.");
+        BB_LOGE(TAG, "Failed to ALlocate the memory for Bytebeam Log.");
         return BB_FAILURE;
     }
 
@@ -128,7 +128,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     // Check for argument loss
     if (temp_var >= buffer_size) 
     {
-        BB_HAL_LOGE(TAG, "Failed to Get the message for Bytebeam Log.");
+        BB_LOGE(TAG, "Failed to Get the message for Bytebeam Log.");
 
         free(message_buffer);
         return BB_FAILURE;
@@ -137,7 +137,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     device_log_json_list = cJSON_CreateArray();
 
     if (device_log_json_list == NULL) {
-        BB_HAL_LOGE(TAG, "Log Json Init failed.");
+        BB_LOGE(TAG, "Log Json Init failed.");
 
         free(message_buffer);
         return BB_FAILURE;
@@ -146,7 +146,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     device_log_json = cJSON_CreateObject();
 
     if (device_log_json == NULL) {
-        BB_HAL_LOGE(TAG, "Log Json add failed.");
+        BB_LOGE(TAG, "Log Json add failed.");
 
         cJSON_Delete(device_log_json_list);
         free(message_buffer);
@@ -157,7 +157,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     if(milliseconds == 0)
     {
-        BB_HAL_LOGE(TAG, "failed to get epoch millis.");
+        BB_LOGE(TAG, "failed to get epoch millis.");
 
         cJSON_Delete(device_log_json_list);
         free(message_buffer);
@@ -167,7 +167,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     timestamp_json = cJSON_CreateNumber(milliseconds);
 
     if (timestamp_json == NULL) {
-        BB_HAL_LOGE(TAG, "Log Json add time stamp failed.");
+        BB_LOGE(TAG, "Log Json add time stamp failed.");
 
         cJSON_Delete(device_log_json_list);
         free(message_buffer);
@@ -180,7 +180,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     sequence_json = cJSON_CreateNumber(sequence);
 
     if (sequence_json == NULL) {
-        BB_HAL_LOGE(TAG, "Log Json add sequence id failed.");
+        BB_LOGE(TAG, "Log Json add sequence id failed.");
 
         cJSON_Delete(device_log_json_list);
         free(message_buffer);
@@ -192,7 +192,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     log_level_json = cJSON_CreateString(level);
 
     if (log_level_json == NULL) {
-        BB_HAL_LOGE(TAG, "Log Json add level failed.");
+        BB_LOGE(TAG, "Log Json add level failed.");
 
         cJSON_Delete(device_log_json_list);
         free(message_buffer);
@@ -204,7 +204,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     log_tag_json = cJSON_CreateString(tag);
 
     if (log_tag_json == NULL) {
-        BB_HAL_LOGE(TAG, "Log Json add tag failed.");
+        BB_LOGE(TAG, "Log Json add tag failed.");
 
         cJSON_Delete(device_log_json_list);
         free(message_buffer);
@@ -216,7 +216,7 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     log_message_json = cJSON_CreateString(message_buffer);
 
     if (log_message_json == NULL) {
-        BB_HAL_LOGE(TAG, "Log Json add message failed.");
+        BB_LOGE(TAG, "Log Json add message failed.");
 
         cJSON_Delete(device_log_json_list);
         free(message_buffer);
@@ -231,14 +231,14 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
 
     if(log_string_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json string print failed.");
+        BB_LOGE(TAG, "Json string print failed.");
 
         cJSON_Delete(device_log_json_list);
         free(message_buffer);
         return BB_FAILURE;
     } 
 
-    BB_HAL_LOGD(TAG, "\n Log to Send :\n%s\n", log_string_json);
+    BB_LOGD(TAG, "\n Log to Send :\n%s\n", log_string_json);
 
     int ret_val = bytebeam_publish_to_stream(bytebeam_log_client, bytebeam_log_stream, log_string_json);
 

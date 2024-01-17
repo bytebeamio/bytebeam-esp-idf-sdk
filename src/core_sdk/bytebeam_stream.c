@@ -31,19 +31,19 @@ bytebeam_err_t bytebeam_publish_to_stream(bytebeam_client_t *bytebeam_client, ch
 
     if(temp_var >= max_len)
     {
-        BB_HAL_LOGE(TAG, "Publish topic size exceeded buffer size");
+        BB_LOGE(TAG, "Publish topic size exceeded buffer size");
         return BB_FAILURE;
     }
 
-    BB_HAL_LOGI(TAG, "Topic is %s", topic);
+    BB_LOGI(TAG, "Topic is %s", topic);
 
     msg_id = bytebeam_hal_mqtt_publish(bytebeam_client->client, topic, payload, strlen(payload), qos);
     
     if (msg_id != -1) {
-        BB_HAL_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        BB_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         return BB_SUCCESS;
     } else {
-        BB_HAL_LOGE(TAG, "Publish to %s stream Failed", stream_name);
+        BB_LOGE(TAG, "Publish to %s stream Failed", stream_name);
         return BB_FAILURE;
     }
 }
@@ -71,7 +71,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(device_shadow_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json object creation failed.");
+        BB_LOGE(TAG, "Json object creation failed.");
         return -1;
     }
 
@@ -79,7 +79,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(bytebeam_client->device_shadow.stream.milliseconds == 0)
     {
-        BB_HAL_LOGE(TAG, "failed to get epoch millis.");
+        BB_LOGE(TAG, "failed to get epoch millis.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -88,7 +88,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(timestamp_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add time stamp failed.");
+        BB_LOGE(TAG, "Json add time stamp failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -100,7 +100,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(sequence_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add sequence id failed.");
+        BB_LOGE(TAG, "Json add sequence id failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -129,7 +129,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(device_reset_reason_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add device reboot reason failed.");
+        BB_LOGE(TAG, "Json add device reboot reason failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -142,7 +142,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(device_uptime_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add device uptime failed.");
+        BB_LOGE(TAG, "Json add device uptime failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -156,7 +156,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(device_status_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add device status failed.");
+        BB_LOGE(TAG, "Json add device status failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -170,7 +170,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(device_software_type_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add device software type failed.");
+        BB_LOGE(TAG, "Json add device software type failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -184,7 +184,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(device_software_version_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add device software version failed.");
+        BB_LOGE(TAG, "Json add device software version failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -198,7 +198,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(device_hardware_type_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add device hardware type failed.");
+        BB_LOGE(TAG, "Json add device hardware type failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -212,7 +212,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(device_hardware_version_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json add device hardware version failed.");
+        BB_LOGE(TAG, "Json add device hardware version failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     }
@@ -223,7 +223,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
 
     if(string_json == NULL)
     {
-        BB_HAL_LOGE(TAG, "Json string print failed.");
+        BB_LOGE(TAG, "Json string print failed.");
         cJSON_Delete(device_shadow_json);
         return -1;
     } 
@@ -247,7 +247,7 @@ bytebeam_err_t bytebeam_publish_device_shadow(bytebeam_client_t *bytebeam_client
     }
 
     strcat(device_shadow_json_str, "]");
-    BB_HAL_LOGI(TAG, "\nStatus to send:\n%s\n", device_shadow_json_str);
+    BB_LOGI(TAG, "\nStatus to send:\n%s\n", device_shadow_json_str);
 
     // publish the json to device shadow stream
     ret_val = bytebeam_publish_to_stream(bytebeam_client, "device_shadow", device_shadow_json_str);
@@ -267,7 +267,7 @@ bytebeam_err_t bytebeam_add_custom_device_shadow(bytebeam_client_t *bytebeam_cli
 
     if(strlen(custom_json_str) >= CONFIG_DEVICE_SHADOW_CUSTOM_JSON_STR_LEN)
     {
-        BB_HAL_LOGE(TAG, "Custom json size exceeded buffer size");
+        BB_LOGE(TAG, "Custom json size exceeded buffer size");
         return BB_FAILURE;
     }
 
@@ -331,13 +331,13 @@ void bytebeam_user_thread_entry(void *pv)
 
     while(1)
     {
-        BB_HAL_LOGI(TAG, "Device Shadow Message.\n");
+        BB_LOGI(TAG, "Device Shadow Message.\n");
         
         err_code = bytebeam_publish_device_shadow(bytebeam_client);
 
         if(err_code != BB_SUCCESS)
         {
-            BB_HAL_LOGE(TAG, "Failed to push Device Shadow Seq : %llu\n", bytebeam_client->device_shadow.stream.sequence);
+            BB_LOGE(TAG, "Failed to push Device Shadow Seq : %llu\n", bytebeam_client->device_shadow.stream.sequence);
         }
 
         vTaskDelay(CONFIG_DEVICE_SHADOW_PUSH_INTERVAL * 1000 / portTICK_PERIOD_MS);

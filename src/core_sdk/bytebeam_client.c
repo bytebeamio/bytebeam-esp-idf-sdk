@@ -16,7 +16,7 @@ static int read_device_config_file()
     char config_fname[100] = "";
 
 #if CONFIG_DEVICE_PROVISIONING_FILESYSTEM_IS_SPIFFS
-    BB_HAL_LOGI(TAG, "SPIFFS file system detected !");
+    BB_LOGI(TAG, "SPIFFS file system detected !");
 
     ret_code = bytebeam_hal_spiffs_mount();
 
@@ -30,7 +30,7 @@ static int read_device_config_file()
 #endif
 
 #if CONFIG_DEVICE_PROVISIONING_FILESYSTEM_IS_FATFS
-    BB_HAL_LOGI(TAG, "FATFS file system detected !");
+    BB_LOGI(TAG, "FATFS file system detected !");
 
     ret_code = bytebeam_hal_fatfs_mount();
 
@@ -45,21 +45,21 @@ static int read_device_config_file()
 #endif
 
 #if CONFIG_DEVICE_PROVISIONING_FILESYSTEM_IS_LITTLEFS
-    BB_HAL_LOGI(TAG, "LITTLEFS file system detected !");
+    BB_LOGI(TAG, "LITTLEFS file system detected !");
 
     // Just print the log and return :)
-    BB_HAL_LOGI(TAG, "LITTLEFS file system is not supported by the sdk yet :)");
+    BB_LOGI(TAG, "LITTLEFS file system is not supported by the sdk yet :)");
     return -1;
 #endif
 
     const char* path = config_fname;
-    BB_HAL_LOGI(TAG, "Reading file : %s", path);
+    BB_LOGI(TAG, "Reading file : %s", path);
 
     FILE *file = fopen(path, "r");
 
     if (file == NULL) 
     {
-        BB_HAL_LOGE(TAG, "Failed to open device config file for reading");
+        BB_LOGE(TAG, "Failed to open device config file for reading");
         return -1;
     }
 
@@ -69,7 +69,7 @@ static int read_device_config_file()
 
     if(file_length <= 0)
     {
-        BB_HAL_LOGE(TAG, "Failed to get device config file size");
+        BB_LOGE(TAG, "Failed to get device config file size");
         return -1;
     }
 
@@ -79,7 +79,7 @@ static int read_device_config_file()
     // if memory allocation fails just log the failure to serial and return :)
     if(bytebeam_device_config_data == NULL)
     {
-        BB_HAL_LOGE(TAG, "Failed to allocate the memory for device config file");
+        BB_LOGE(TAG, "Failed to allocate the memory for device config file");
         return -1;
     }
 
@@ -101,7 +101,7 @@ static int read_device_config_file()
 
     if(ret_code != 0)
     {
-        BB_HAL_LOGE(TAG, "Failed to unregister SPIFFS (%d)", ret_code);
+        BB_LOGE(TAG, "Failed to unregister SPIFFS (%d)", ret_code);
         return -1;
     }
 #endif
@@ -111,7 +111,7 @@ static int read_device_config_file()
 
     if(ret_code != 0)
     {
-        BB_HAL_LOGE(TAG, "Failed to unregister FATFS (%d)", ret_code);
+        BB_LOGE(TAG, "Failed to unregister FATFS (%d)", ret_code);
         return -1;
     }
 #endif
@@ -128,7 +128,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
 {
     // before going ahead make sure you are parsing something
     if (bytebeam_device_config_data == NULL) {
-        BB_HAL_LOGE(TAG, "device config file is empty");
+        BB_LOGE(TAG, "device config file is empty");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -145,7 +145,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     bytebeam_cert_json = cJSON_Parse(json_file);
 
     if (bytebeam_cert_json == NULL) {
-        BB_HAL_LOGE(TAG, "ERROR in parsing the JSON\n");
+        BB_LOGE(TAG, "ERROR in parsing the JSON\n");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -154,7 +154,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     cJSON *prj_id_obj = cJSON_GetObjectItem(bytebeam_cert_json, "project_id");
 
     if (!(cJSON_IsString(prj_id_obj) && (prj_id_obj->valuestring != NULL))) {
-        BB_HAL_LOGE(TAG, "ERROR in getting the project id\n");
+        BB_LOGE(TAG, "ERROR in getting the project id\n");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -165,7 +165,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
 
     if(temp_var >= max_len)
     {   
-        BB_HAL_LOGE(TAG, "Project Id length exceeded buffer size");
+        BB_LOGE(TAG, "Project Id length exceeded buffer size");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -174,7 +174,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     cJSON *broker_name_obj = cJSON_GetObjectItem(bytebeam_cert_json, "broker");
 
     if (!(cJSON_IsString(broker_name_obj) && (broker_name_obj->valuestring != NULL))) {
-        BB_HAL_LOGE(TAG, "ERROR parsing broker name");
+        BB_LOGE(TAG, "ERROR parsing broker name");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -183,7 +183,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     cJSON *port_num_obj = cJSON_GetObjectItem(bytebeam_cert_json, "port");
 
     if (!(cJSON_IsNumber(port_num_obj))) {
-        BB_HAL_LOGE(TAG, "ERROR parsing port number.");
+        BB_LOGE(TAG, "ERROR parsing port number.");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -196,7 +196,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
 
     if(temp_var >= max_len)
     {
-        BB_HAL_LOGE(TAG, "Broker URL length exceeded buffer size");
+        BB_LOGE(TAG, "Broker URL length exceeded buffer size");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -205,7 +205,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     cJSON *device_id_obj = cJSON_GetObjectItem(bytebeam_cert_json, "device_id");
 
     if (!(cJSON_IsString(device_id_obj) && (device_id_obj->valuestring != NULL))) {
-        BB_HAL_LOGE(TAG, "ERROR parsing device id\n");
+        BB_LOGE(TAG, "ERROR parsing device id\n");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -216,7 +216,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     
     if(temp_var >= max_len)
     {
-        BB_HAL_LOGE(TAG, "Device Id length exceeded buffer size");
+        BB_LOGE(TAG, "Device Id length exceeded buffer size");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -225,7 +225,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     cJSON *auth_obj = cJSON_GetObjectItem(bytebeam_cert_json, "authentication");
 
     if (bytebeam_cert_json == NULL || !(cJSON_IsObject(auth_obj))) {
-        BB_HAL_LOGE(TAG, "ERROR in parsing the auth JSON\n");
+        BB_LOGE(TAG, "ERROR in parsing the auth JSON\n");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -234,7 +234,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     cJSON *ca_cert_obj = cJSON_GetObjectItem(auth_obj, "ca_certificate");
 
     if (!(cJSON_IsString(ca_cert_obj) && (ca_cert_obj->valuestring != NULL))) {
-        BB_HAL_LOGE(TAG, "ERROR parsing ca certificate\n");
+        BB_LOGE(TAG, "ERROR parsing ca certificate\n");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -245,7 +245,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     cJSON *device_cert_obj = cJSON_GetObjectItem(auth_obj, "device_certificate");
 
     if (!(cJSON_IsString(device_cert_obj) && (device_cert_obj->valuestring != NULL))) {
-        BB_HAL_LOGE(TAG, "ERROR parsing device certifate\n");
+        BB_LOGE(TAG, "ERROR parsing device certifate\n");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -256,7 +256,7 @@ static int parse_device_config_file(bytebeam_device_config_t *device_cfg)
     cJSON *device_private_key_obj = cJSON_GetObjectItem(auth_obj, "device_private_key");
 
     if (!(cJSON_IsString(device_private_key_obj) && (device_private_key_obj->valuestring != NULL))) {
-        BB_HAL_LOGE(TAG, "ERROR parsing device private key\n");
+        BB_LOGE(TAG, "ERROR parsing device private key\n");
 
         free(bytebeam_device_config_data);
         return -1;
@@ -275,10 +275,10 @@ static void set_mqtt_conf(bytebeam_device_config_t *device_cfg, bytebeam_client_
     // set the broker uri
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     mqtt_cfg->broker.address.uri = device_cfg->broker_uri;
-    BB_HAL_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->broker.address.uri);
+    BB_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->broker.address.uri);
 #else
     mqtt_cfg->uri = device_cfg->broker_uri;
-    BB_HAL_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
+    BB_LOGI(TAG, "The uri  is: %s\n", mqtt_cfg->uri);
 #endif  
 
     // set the server certificate
@@ -309,7 +309,7 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
      * bytebeam client is not running then we don't have any memory leaks (mostly solving pointer issues) :)
      */
 
-    BB_HAL_LOGD(TAG, "Cleaning Up Bytebeam SDK");
+    BB_LOGD(TAG, "Cleaning Up Bytebeam SDK");
 
     // clearing bytebeam device configuration
     bytebeam_client->device_cfg.ca_cert_pem = NULL;
@@ -338,16 +338,16 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
     bytebeam_log_client_set(NULL);
 
     // clearing bytebeam log level
-    bytebeam_log_level_set(BB_LOG_LEVEL_NONE);
+    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_INFO);
 
     // clearing certifciate json object
     if(bytebeam_cert_json != NULL) {
         cJSON_Delete(bytebeam_cert_json);
         bytebeam_cert_json = NULL;
-        BB_HAL_LOGD(TAG, "Certificate JSON object deleted");
+        BB_LOGD(TAG, "Certificate JSON object deleted");
     }
     
-    BB_HAL_LOGD(TAG, "Bytebeam SDK Cleanup done !!");
+    BB_LOGD(TAG, "Bytebeam SDK Cleanup done !!");
 }
 
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
@@ -365,7 +365,7 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
         ret_val = read_device_config_file();
 
         if(ret_val != 0) {
-            BB_HAL_LOGE(TAG, "Error in reading device config JSON");
+            BB_LOGE(TAG, "Error in reading device config JSON");
 
             /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
             bytebeam_sdk_cleanup(bytebeam_client);
@@ -376,14 +376,14 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
         ret_val = parse_device_config_file(&(bytebeam_client->device_cfg));
 
         if (ret_val != 0) {
-            BB_HAL_LOGE(TAG, "Error in parsing device config JSON");
+            BB_LOGE(TAG, "Error in parsing device config JSON");
 
             /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
             bytebeam_sdk_cleanup(bytebeam_client);
             return BB_FAILURE;
         }
     } else {
-        BB_HAL_LOGI(TAG, "Using provided device config data !");
+        BB_LOGI(TAG, "Using provided device config data !");
     }
 
     // set the mqtt configurations
@@ -393,7 +393,7 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
     ret_val = bytebeam_hal_init(bytebeam_client);
 
     if (ret_val != 0) {
-        BB_HAL_LOGE(TAG, "Error in initializing bytebeam hal");
+        BB_LOGE(TAG, "Error in initializing bytebeam hal");
 
         /* This call will clear all the bytebeam sdk variables so to avoid any memory leaks further */
         bytebeam_sdk_cleanup(bytebeam_client);
@@ -408,7 +408,7 @@ bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)
         bytebeam_log_stream_set(CONFIG_BYTEBEAM_CLOUD_LOGGING_STREAM);
     #endif
 
-    BB_HAL_LOGI(TAG, "Bytebeam Client Initialized !!");
+    BB_LOGI(TAG, "Bytebeam Client Initialized !!");
 
     return BB_SUCCESS;
 }
@@ -425,10 +425,10 @@ bytebeam_err_t bytebeam_start(bytebeam_client_t *bytebeam_client)
     ret_val = bytebeam_hal_start_mqtt(bytebeam_client);
 
     if (ret_val != 0) {
-        BB_HAL_LOGE(TAG, "Bytebeam Client start failed");
+        BB_LOGE(TAG, "Bytebeam Client start failed");
         return BB_FAILURE;
     } else {
-        BB_HAL_LOGI(TAG, "Bytebeam Client started !!");
+        BB_LOGI(TAG, "Bytebeam Client started !!");
         return BB_SUCCESS;
     }
 }
@@ -445,10 +445,10 @@ bytebeam_err_t bytebeam_stop(bytebeam_client_t *bytebeam_client)
     ret_val = bytebeam_hal_stop_mqtt(bytebeam_client);
 
     if (ret_val != 0) {
-        BB_HAL_LOGE(TAG, "Bytebam Client stop failed");
+        BB_LOGE(TAG, "Bytebam Client stop failed");
         return BB_FAILURE;
     } else {
-        BB_HAL_LOGI(TAG, "Bytebeam Client stopped !!");
+        BB_LOGI(TAG, "Bytebeam Client stopped !!");
         return BB_SUCCESS;
     }
 }
@@ -465,14 +465,14 @@ bytebeam_err_t bytebeam_destroy(bytebeam_client_t *bytebeam_client)
     ret_val = bytebeam_hal_destroy(bytebeam_client);
 
     if (ret_val != 0) {
-        BB_HAL_LOGE(TAG, "Bytebeam Client destroy failed");
+        BB_LOGE(TAG, "Bytebeam Client destroy failed");
         return BB_FAILURE;
     }
 
     /* This call will clearing all the bytebeam sdk variables so to avoid any memory leaks further */
     bytebeam_sdk_cleanup(bytebeam_client);
 
-    BB_HAL_LOGI(TAG, "Bytebeam Client destroyed !!");
+    BB_LOGI(TAG, "Bytebeam Client destroyed !!");
 
     return BB_SUCCESS;
 }
