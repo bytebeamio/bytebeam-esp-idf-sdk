@@ -305,12 +305,6 @@ static void set_mqtt_conf(bytebeam_device_config_t *device_cfg, bytebeam_client_
 
 static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
 {
-    /* We will use this function in bytebeam client init and bytebeam client destroy phase, So to make sure if
-     * bytebeam client is not running then we don't have any memory leaks (mostly solving pointer issues) :)
-     */
-
-    BB_LOGD(TAG, "Cleaning Up Bytebeam SDK");
-
     // clearing bytebeam device configuration
     bytebeam_client->device_cfg.ca_cert_pem = NULL;
     bytebeam_client->device_cfg.client_cert_pem = NULL;
@@ -344,10 +338,7 @@ static void bytebeam_sdk_cleanup(bytebeam_client_t *bytebeam_client)
     if(bytebeam_cert_json != NULL) {
         cJSON_Delete(bytebeam_cert_json);
         bytebeam_cert_json = NULL;
-        BB_LOGD(TAG, "Certificate JSON object deleted");
     }
-    
-    BB_LOGD(TAG, "Bytebeam SDK Cleanup done !!");
 }
 
 bytebeam_err_t bytebeam_init(bytebeam_client_t *bytebeam_client)

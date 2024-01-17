@@ -72,7 +72,6 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
         if (update_progress_percent == loop_var) {
             BB_LOGD(TAG, "update_progress_percent : %d", update_progress_percent);
-            BB_LOGD(TAG, "ota_action_id : %s", ota_action_id);
 
             // If we are done, change the status to downloaded
             if(update_progress_percent == 100) {
