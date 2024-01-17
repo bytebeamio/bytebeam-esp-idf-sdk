@@ -9,6 +9,7 @@
 #include "bytebeam_esp_hal.h"
 #include "bytebeam_ota.h"
 #include "bytebeam_action.h"
+#include "bytebeam_stream.h"
 #include "bytebeam_client.h"
 
 static int ota_img_data_len = 0;
@@ -71,7 +72,6 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
         if (update_progress_percent == loop_var) {
             BB_LOGD(TAG, "update_progress_percent : %d", update_progress_percent);
-            BB_LOGD(TAG, "ota_action_id : %s", ota_action_id);
 
             // If we are done, change the status to downloaded
             if(update_progress_percent == 100) {
@@ -421,10 +421,8 @@ int bytebeam_hal_start_mqtt(bytebeam_client_t *bytebeam_client)
         }
     }
 
-    // publish the device heartbeat
-    if (bytebeam_publish_device_heartbeat(bytebeam_client) != 0) {
-        BB_LOGE(TAG, "Failed to publish device heartbeat");
-    }
+    xTaskCreate(bytebeam_user_thread_entry, "Bytebeam User Thread", 4*1024, bytebeam_client, 2, NULL);
+    xTaskCreate(bytebeam_mqtt_thread_entry, "Bytebeam MQTT Thread", 8*1024, NULL, 2, NULL);
 
     return 0;
 }

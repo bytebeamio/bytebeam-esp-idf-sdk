@@ -36,33 +36,18 @@ static bytebeam_client_t bytebeam_client;
 
 static const char *TAG = "BYTEBEAM_CLOUD_LOGGING_EXAMPLE";
 
-static void bytebeam_cloud_logging_test(void) 
+static void bytebeam_cloud_logging_test() 
 {
-    /* default bytebeam log level is BYTEBEAM_LOG_LEVEL_INFO, so logs beyond info level will not work :) 
-     * You can always change the log setting at the compile time or run time
-     */
-    BYTEBEAM_LOGE(TAG, "I am %s Log", "Error");
-    BYTEBEAM_LOGW(TAG, "I am %s Log", "Warn");
-    BYTEBEAM_LOGI(TAG, "I am %s Log", "Info");
-    BYTEBEAM_LOGD(TAG, "I am %s Log", "Debug");                   // debug Log will not appear to cloud
-    BYTEBEAM_LOGV(TAG, "I am %s Log", "Verbose");                 // verbose Log will not appear to cloud
-
-    // changing log level to Verbose for showing use case   
+    // setting log level to Verbose
     esp_log_level_set(TAG, ESP_LOG_VERBOSE);
     bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_VERBOSE); 
 
-    /* now bytebeam log level is BYTEBEAM_LOG_LEVEL_VERBOSE, so every logs should work now :)
-     * make sure your esp log level supports Verbose to see the log in the terminal
-     */
+    // sending logs to bytebeam
     BYTEBEAM_LOGE(TAG, "This is %s Log", "Error");
     BYTEBEAM_LOGW(TAG, "This is %s Log", "Warn");
     BYTEBEAM_LOGI(TAG, "This is %s Log", "Info");
-    BYTEBEAM_LOGD(TAG, "This is %s Log", "Debug");                // debug Log should appear to cloud
-    BYTEBEAM_LOGV(TAG, "This is %s Log", "Verbose");              // verbose Log should appear to cloud
-
-    // changing log level back to Info for meeting initial conditions
-    esp_log_level_set(TAG, ESP_LOG_INFO);
-    bytebeam_log_level_set(BYTEBEAM_LOG_LEVEL_INFO);
+    BYTEBEAM_LOGD(TAG, "This is %s Log", "Debug"); 
+    BYTEBEAM_LOGV(TAG, "This is %s Log", "Verbose");
 
     ESP_LOGI(TAG, "Bytebeam Log Test Executed Successfully !\n");
 }
@@ -77,7 +62,6 @@ static void app_start(bytebeam_client_t *bytebeam_client)
 
         if(bytebeam_client->connection_status == 1)
         {
-            // this is how you can do cloud logging, try other log levels for better understanding
             BYTEBEAM_LOGI(TAG, "Status : Connected");
             BYTEBEAM_LOGI(TAG, "Project Id : %s, Device Id : %s", bytebeam_client->device_cfg.project_id, bytebeam_client->device_cfg.device_id);
         }
@@ -151,13 +135,6 @@ void app_main(void)
     // sync time from the ntp
     sync_time_from_ntp();
 
-    // setting up the device info i.e to be seen in the device shadow
-    bytebeam_client.device_info.status           = "Device is Up!";
-    bytebeam_client.device_info.software_type    = "cloud-logging-app";
-    bytebeam_client.device_info.software_version = "1.0.0";
-    bytebeam_client.device_info.hardware_type    = "ESP32 DevKit V1";
-    bytebeam_client.device_info.hardware_version = "rev1";
-
     // initialize the bytebeam client
     bytebeam_init(&bytebeam_client);
 
@@ -173,28 +150,8 @@ void app_main(void)
         ESP_LOGI(TAG, "Cloud Logging is Disabled.");
     }
 
-    // enable cloud logging for your device (default)
-    // bytebeam_enable_cloud_logging();
-
-    // disable cloud logging for your device
-    // bytebeam_disable_cloud_logging();
-
-    // get the log stream name
-    // char* log_stream_name = bytebeam_log_stream_get();
-
-    // configure the log stream if needed, defaults to "logs"
-    // bytebeam_log_stream_set("device_logs");
-
-    // get the bytebeam log level
-    // int current_log_level = bytebeam_log_level_get();
-
-    // set the bytebeam log level
-    // bytebeam_log_level_set(log_level_to_set);
-
-    /* bytebeam logs can be tested once bytebeam client is started successfully, Use bytebeam_cloud_logging_test to test
-     * the bytebeam log feature i.e this functions is not included in the sdk
-     */
-    // bytebeam_cloud_logging_test();
+    // bytebeam logs can be tested once bytebeam client is started successfully
+    bytebeam_cloud_logging_test();
 
     //
     // start the main application

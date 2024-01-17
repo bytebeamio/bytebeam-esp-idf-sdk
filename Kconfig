@@ -1,30 +1,148 @@
 menu "Bytebeam"
-
-    choice BYTEBEAM_PROVISIONING_FILESYSTEM
-        prompt "Provisioning file system"
-        default BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
-        help
-            Select the file system for the device provisioning
-
-        config BYTEBEAM_PROVISION_DEVICE_FROM_SPIFFS
-            bool "SPIFFS"
+    menu "Device Shadow"
+        config DEVICE_SHADOW_STATUS
+            string "Status"
+            default "Device is Online"
             help
-                Use spiffs file system for device provisioning
-
-        config BYTEBEAM_PROVISION_DEVICE_FROM_LITTLEFS
-            bool "LITTLEFS"
+                Provide the status
+        
+        config DEVICE_SHADOW_SOFTWARE_TYPE
+            string "Software Type"
+            default "bytebeam-app"
             help
-                Use littlefs file system for device provisioning
+                Provide the software type
 
-        config BYTEBEAM_PROVISION_DEVICE_FROM_FATFS
-            bool "FATFS"
+        config DEVICE_SHADOW_SOFTWARE_VERSION
+            string "Software Version"
+            default "v0.1.0"
             help
-                Use fatfs file system for device provisioning
-    endchoice
+                Provide the software version
+        
+        config DEVICE_SHADOW_HARDWARE_TYPE
+            string "Hardware Type"
+            default "Bytebeam ESP32"
+            help
+                Provide the hardware type
+
+        config DEVICE_SHADOW_HARDWARE_VERSION
+            string "Hardware Version"
+            default "rev1"
+            help
+                Provide the hardware version
+        
+        config DEVICE_SHADOW_CUSTOM_JSON_STR_LEN
+            int "Custom json string len (In Bytes)"
+            default 512
+            help
+                Provide the length of custom device shadow json str
+
+        config DEVICE_SHADOW_PUSH_INTERVAL
+            int "Push Interval (In Seconds)"
+            default 40
+            help
+                Provide the heartbeat push interval
+    endmenu
     
-    config BYTEBEAM_PROVISIONING_FILENAME
-        string "Provisioning file name"
-        default "device_config.json"
+    menu "Device Provisioning"  
+        choice DEVICE_PROVISIONING_FILESYSTEM
+            prompt "Provisioning file system"
+            default DEVICE_PROVISIONING_FILESYSTEM_IS_SPIFFS
+            help
+                Select the file system for the device provisioning
+    
+            config DEVICE_PROVISIONING_FILESYSTEM_IS_SPIFFS
+                bool "SPIFFS"
+                help
+                    Use spiffs file system for device provisioning
+            
+            config DEVICE_PROVISIONING_FILESYSTEM_IS_FATFS
+                bool "FATFS"
+                help
+                    Use fatfs file system for device provisioning
+
+            config DEVICE_PROVISIONING_FILESYSTEM_IS_LITTLEFS
+                bool "LITTLEFS"
+                help
+                    Use littlefs file system for device provisioning
+        endchoice
+                    
+        config DEVICE_PROVISIONING_FILENAME
+            string "Provisioning file name"
+            default "device_config.json"
+            help
+                Provide the file name for the device provisioning
+    endmenu
+
+    menu "Bytebeam Logging"
+        config BYTEBEAM_CLOUD_LOGGING_IS_ENABLED
+            bool "Enable cloud logging"
+            help
+                Enable cloud logging
+        
+        config BYTEBEAM_CLOUD_LOGGING_STREAM
+            string "Cloud logging log stream"
+            depends on BYTEBEAM_CLOUD_LOGGING_IS_ENABLED
+            default "logs"
+            help
+                Provide the cloud logging stream name
+
+        choice BYTEBEAM_LOGGING_LEVEL
+            prompt "Logging level"
+            default BYTEBEAM_LOGGING_LEVEL_IS_INFO
+            help
+                Select the bytebeam logging level
+    
+            config BYTEBEAM_LOGGING_LEVEL_IS_NONE
+                bool "No Output"
+                help
+                    None log level
+            
+            config BYTEBEAM_LOGGING_LEVEL_IS_ERROR
+                bool "Error"
+                help
+                    Error log level
+                    
+            config BYTEBEAM_LOGGING_LEVEL_IS_WARN
+                bool "Warning"
+                help
+                    Warning log level
+                
+            config BYTEBEAM_LOGGING_LEVEL_IS_INFO
+                bool "Info"
+                help
+                    Info log level
+
+            config BYTEBEAM_LOGGING_LEVEL_IS_DEBUG
+                bool "Debug"
+                help
+                    Debug log level
+            
+            config BYTEBEAM_LOGGING_LEVEL_IS_VERBOSE
+                bool "Verbose"
+                help
+                    Verbose log level                    
+        endchoice
+
+        config BYTEBEAM_LOGGING_LEVEL
+            int
+            default 0 if BYTEBEAM_LOGGING_LEVEL_IS_NONE
+            default 1 if BYTEBEAM_LOGGING_LEVEL_IS_ERROR
+            default 2 if BYTEBEAM_LOGGING_LEVEL_IS_WARN
+            default 3 if BYTEBEAM_LOGGING_LEVEL_IS_INFO
+            default 4 if BYTEBEAM_LOGGING_LEVEL_IS_DEBUG
+            default 5 if BYTEBEAM_LOGGING_LEVEL_IS_VERBOSE
+    endmenu
+    
+    config NUM_MESSAGES_IN_MQTT_BATCH
+        int "MQTT batch element numbers"
+        default 125
         help
-            Provide the file name for the device provisioning
+            Provide the number of elements in mqtt batch
+    
+    config MQTT_BATCH_ELEMENT_SIZE
+        int "MQTT batch element size (In Bytes)"
+        default 250
+        help
+            Provide the length of element in mqtt batch 
+
 endmenu

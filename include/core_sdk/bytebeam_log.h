@@ -1,19 +1,19 @@
 #ifndef BYTEBEAM_LOG_H
 #define BYTEBEAM_LOG_H
 
+#include "bytebeam_hal.h"
 #include "bytebeam_client.h"
 
 /*This macro is used to specify the maximum length of bytebeam log stream string*/
 #define BYTEBEAM_LOG_STREAM_STR_LEN 20
 
-#define BYTEBEAM_LOGX(BB_LOGX, level, tag, fmt, ...)                                          \
-     do {                                                                                     \
+#define BYTEBEAM_LOGX(BB_LOGX, level, tag, fmt, ...)                                            \
+    do {                                                                                      \
         const char* levelStr = bytebeam_log_level_str[level];                                 \
         if(level <= bytebeam_log_level_get()) {                                               \
+            BB_LOGX(tag, fmt, ##__VA_ARGS__);                                             \
             if (bytebeam_log_publish(levelStr, tag, fmt, ##__VA_ARGS__) == BB_FAILURE) {      \
-                BB_LOGE(tag, "Failed To Publish Bytebeam Log !");                             \
-            } else {                                                                          \
-                BB_LOGX(tag, fmt, ##__VA_ARGS__);                                             \
+                BB_LOGE(tag, "Failed To publish log to bytebeam.");                       \
             }                                                                                 \
         }                                                                                     \
     } while (0)
@@ -26,7 +26,6 @@
 
 /* This enum represents Bytebeam Log Levels */
 typedef enum {
-    BYTEBEAM_LOG_LEVEL_NONE,
     BYTEBEAM_LOG_LEVEL_ERROR,
     BYTEBEAM_LOG_LEVEL_WARN,
     BYTEBEAM_LOG_LEVEL_INFO,
@@ -34,8 +33,7 @@ typedef enum {
     BYTEBEAM_LOG_LEVEL_VERBOSE,
 } bytebeam_log_level_t;
 
-static const char* bytebeam_log_level_str[6] = {
-    [BYTEBEAM_LOG_LEVEL_NONE]    = "None",
+static const char* bytebeam_log_level_str[5] = {
     [BYTEBEAM_LOG_LEVEL_ERROR]   = "Error",
     [BYTEBEAM_LOG_LEVEL_WARN]    = "Warn",
     [BYTEBEAM_LOG_LEVEL_INFO]    = "Info",

@@ -1,14 +1,14 @@
 idf_component_register(
     INCLUDE_DIRS 
         "include/mcu_hal"
-        "include/core_sdk"    
+        "include/core_sdk"
     SRCS 
         "src/mcu_hal/bytebeam_esp_hal.c" 
         "src/core_sdk/bytebeam_client.c"
         "src/core_sdk/bytebeam_action.c"
         "src/core_sdk/bytebeam_stream.c"
         "src/core_sdk/bytebeam_ota.c"
-        "src/core_sdk/bytebeam_log.c"       
+        "src/core_sdk/bytebeam_log.c"     
     PRIV_REQUIRES 
         "json"
         "mqtt"

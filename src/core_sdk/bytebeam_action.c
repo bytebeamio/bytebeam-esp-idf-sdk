@@ -23,8 +23,6 @@ int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_
         return -1;
     }
 
-    BB_LOGD(TAG, "Subscribe Topic is %s", topic);
-
     msg_id = bytebeam_hal_mqtt_subscribe(client, topic, qos);
 
     return msg_id;
@@ -32,7 +30,7 @@ int bytebeam_subscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_
 
 int bytebeam_unsubscribe_to_actions(bytebeam_device_config_t device_cfg, bytebeam_client_handle_t client)
 {
-    int msg_id;
+    int msg_id = 0;
     char topic[BYTEBEAM_MQTT_TOPIC_STR_LEN] = { 0 };
 
     int max_len = BYTEBEAM_MQTT_TOPIC_STR_LEN;
@@ -44,15 +42,8 @@ int bytebeam_unsubscribe_to_actions(bytebeam_device_config_t device_cfg, bytebea
         return -1;
     }
 
-    BB_LOGD(TAG, "Unsubscribe Topic is %s", topic);
-
-    /* Commenting call to hal unsubscribe api as cloud seems to be not supporting unsubscribe feature, will test it
-     * once cloud supports unsubscribe feature, most probably it will work.
-     */
-
+    // not yet supported by bytebeam
     // msg_id = bytebeam_hal_mqtt_unsubscribe(client, topic);
-    msg_id = 1234;
-    BB_LOGI(TAG, "We will add the unsubscribe to actions feature soon");
 
     return msg_id;
 }
@@ -110,8 +101,6 @@ int bytebeam_handle_actions(char *action_received, bytebeam_client_handle_t clie
 
     int action_id_val = atoi(action_id);
     int last_known_action_id_val = atoi(bytebeam_last_known_action_id);
-
-    BB_LOGD(TAG, "action_id_val : %d, last_known_action_id_val : %d\n",action_id_val, last_known_action_id_val);
 
     // just ignore the previous actions if triggered again
     if (action_id_val <= last_known_action_id_val) {
@@ -189,7 +178,6 @@ bytebeam_err_t bytebeam_add_action_handler(bytebeam_client_t *bytebeam_client, i
 
 bytebeam_err_t bytebeam_remove_action_handler(bytebeam_client_t *bytebeam_client, char *func_name)
 {
-
     if (bytebeam_client == NULL || func_name == NULL)
     {
         return BB_NULL_CHECK_FAILURE;
