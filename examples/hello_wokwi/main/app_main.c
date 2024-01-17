@@ -303,13 +303,6 @@ void app_main(void)
     // configure the gpio led
     configure_led();
 
-    // setting up the device info i.e to be seen in the device shadow
-    bytebeam_client.device_info.status           = "Device is Up!";
-    bytebeam_client.device_info.software_type    = "hello-wokwi-app";
-    bytebeam_client.device_info.software_version = "1.0.0";
-    bytebeam_client.device_info.hardware_type    = "ESP32 DevKit V1";
-    bytebeam_client.device_info.hardware_version = "rev1";
-
     // setting up the device config data
     bytebeam_client.device_cfg.ca_cert_pem     = ca_cert;
     bytebeam_client.device_cfg.client_cert_pem = client_cert;

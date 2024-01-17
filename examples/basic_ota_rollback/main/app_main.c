@@ -26,7 +26,6 @@
 #include "freertos/task.h"
 
 #include "esp_ota_ops.h"
-
 #include "bytebeam_sdk.h"
 
 // this macro is used to specify the delay for 10 sec.
@@ -139,13 +138,6 @@ void app_main(void)
 
     // sync time from the ntp
     sync_time_from_ntp();
-
-    // setting up the device info i.e to be seen in the device shadow
-    bytebeam_client.device_info.status           = "Device is Up!";
-    bytebeam_client.device_info.software_type    = "basic-ota-rollback-app";
-    bytebeam_client.device_info.software_version = fw_version;
-    bytebeam_client.device_info.hardware_type    = "ESP32 DevKit V1";
-    bytebeam_client.device_info.hardware_version = "rev1";
 
     // initialize the bytebeam client
     bytebeam_init(&bytebeam_client);

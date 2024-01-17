@@ -4,10 +4,10 @@
 #include "bytebeam_log.h"
 
 // bytebeam log module variables
-static bool is_cloud_logging_enable = true;
-static bytebeam_client_t *bytebeam_log_client = NULL;
-static char bytebeam_log_stream[BYTEBEAM_LOG_STREAM_STR_LEN] = "logs";
+static bool is_cloud_logging_enable = false;
+static char bytebeam_log_stream[BYTEBEAM_LOG_STREAM_STR_LEN] = "";
 static bytebeam_log_level_t bytebeam_log_level = BYTEBEAM_LOG_LEVEL_INFO;
+static bytebeam_client_t *bytebeam_log_client = NULL;
 
 static const char *TAG = "BYTEBEAM_LOG";
 
@@ -18,6 +18,7 @@ void bytebeam_log_client_set(bytebeam_client_t *bytebeam_client)
 
 void bytebeam_enable_cloud_logging()
 {
+    BB_LOGI(TAG, "Cloud Logging Enabled.");
     is_cloud_logging_enable = true;
 }
 
@@ -28,11 +29,13 @@ bool bytebeam_is_cloud_logging_enabled()
 
 void bytebeam_disable_cloud_logging()
 {
+    BB_LOGI(TAG, "Cloud Logging Disabled.");
     is_cloud_logging_enable = false;
 }
 
 void bytebeam_log_level_set(bytebeam_log_level_t level)
 {
+    BB_LOGI(TAG, "Setting Bytebeam Log Level : %d", level);
     bytebeam_log_level = level;
 }
 
@@ -43,7 +46,6 @@ bytebeam_log_level_t bytebeam_log_level_get(void)
 
 bytebeam_err_t bytebeam_log_stream_set(char* stream_name)
 {
-
     if (stream_name == NULL)
     {
         return BB_NULL_CHECK_FAILURE;
@@ -57,6 +59,8 @@ bytebeam_err_t bytebeam_log_stream_set(char* stream_name)
         BB_LOGE(TAG, "log stream size exceeded buffer size");
         return BB_FAILURE;
     }
+
+    BB_LOGI(TAG, "Setting Bytebeam Cloud Logging Stream : %s", stream_name);
 
     return BB_SUCCESS;
 }
@@ -88,8 +92,10 @@ bytebeam_err_t bytebeam_log_publish(const char *level, const char *tag, const ch
     }
 
     // if cloud logging is disabled, we don't need to push just return :)
-    if(!is_cloud_logging_enable) {
-      return BB_SUCCESS;
+    if(!is_cloud_logging_enable) 
+    {
+        BB_LOGE(TAG, "Bytebeam cloud logging is not enabled");
+        return BB_FAILURE;
     }
 
     va_list args;
